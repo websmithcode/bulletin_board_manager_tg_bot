@@ -3,7 +3,7 @@ from tinydb import TinyDB, Query
 admin = Query()
 class Database(object):
     def __init__(self, *args, **kwargs):
-        self.__db = TinyDB(kwargs.pop('db', 'data.db'))
+        self.__db = TinyDB(kwargs.pop('db', 'admins.db'))
 
 
     @property
