@@ -1,9 +1,9 @@
 from tinydb import TinyDB, Query
 
 admin = Query()
-class Database(object):
+class AdminDatabase(object):
     def __init__(self, *args, **kwargs):
-        self.__db = TinyDB(kwargs.pop('db', 'admins.db'))
+        self.__db = TinyDB(kwargs.pop('db', 'admins'))
 
 
     @property
@@ -25,3 +25,22 @@ class Database(object):
             self.__db.remove(admin.fullname == kwargs.get('fullname'))
         elif kwargs.get('id'):
             self.__db.remove(admin.id == kwargs.get('id'))
+            
+
+tag = Query()
+class TagDatabase():
+    def __init__(self, *args, **kwargs):
+        self.__db = TinyDB(kwargs.pop('db', 'tags'))
+        
+    
+    @property
+    def tags(self):
+        return self.__db.all()
+    
+    @tags.setter
+    def tags(self, value: str):
+        self.__db.insert({'tag': value})
+        
+    
+    def remove_tag(self, value: str):
+        self.__db.remove(tag.tag == value)
