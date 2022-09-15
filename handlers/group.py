@@ -47,12 +47,9 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
 
         elif message_type == 'photo':
             send = bot.send_photo
-            params['caption'] = message.caption
-            # params['caption'] = text
+            params['caption'] = text
             # возьмет только первое изображение
-            # params['photo'] = message.json.get('photo')[0].get('file_id')
-            params['photo'] = message.photo
-            # bot.send_photo(###, message.photo, message.caption)
+            params['photo'] = message.json.get('photo')[0].get('file_id')
 
         elif message_type == 'video':
             # не сработает
