@@ -6,3 +6,6 @@ pyvenv.cfg
 utils
 __pycache__
 .vscode/
+data.db
+admins
+tags
