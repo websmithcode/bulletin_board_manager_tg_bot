@@ -11,7 +11,7 @@ from handlers.private import  callback_query, on_hashtag_choose
 
 
 __TOKEN = os.environ.get('TOKEN')
-bot = AsyncTeleBot('5546791980:AAEPW5wODZamrOp_jpxVlt6SNid9y4Dos0A', parse_mode='Markdown')
+bot = AsyncTeleBot(__TOKEN, parse_mode='Markdown')
 
 
 def register_handlers():
