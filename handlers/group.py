@@ -1,7 +1,9 @@
 """Модуль групповых хендлеров"""
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from telebot.async_telebot import AsyncTeleBot
+
 from utils.logger import log
+
 from utils.database import AdminDatabase
 
 db = AdminDatabase()
@@ -29,13 +31,12 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     """
     name = message.from_user.username if message.from_user.username else message.from_user.full_name
     text = message.text if message.text else message.caption
-    message_type = message.content_message_type
-
-    if message.chat.message_type not in ('group', 'supergroup'):
+    message_type = message.content_type
+    if message.chat.type not in ('group', 'supergroup'):
         return
-
+    print(message.caption)
+    print(message.photo)
     log.info('Received message: %s from %s, %s', text, name, message.from_user.id)
-
     if message_type in ('text', 'photo', 'video', 'document') and text:
         text += f'\n\n[{name}](tg://user?id={message.from_user.id})'
         params = {'reply_markup': create_markup()}
@@ -46,10 +47,12 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
 
         elif message_type == 'photo':
             send = bot.send_photo
-            params['caption'] = text
+            params['caption'] = message.caption
+            # params['caption'] = text
             # возьмет только первое изображение
-            params['photo'] = message.json.get('photo')[0].get('file_id')
-            bot.send_photo(1,)
+            # params['photo'] = message.json.get('photo')[0].get('file_id')
+            params['photo'] = message.photo
+            # bot.send_photo(###, message.photo, message.caption)
 
         elif message_type == 'video':
             # не сработает

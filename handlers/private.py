@@ -1,14 +1,36 @@
-from utils.logger import log
+from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import Message
+
+from utils.logger import log
+
+from utils.database import TagDatabase
+
+db = TagDatabase()
+
+
+def create_hashtag_markup() -> InlineKeyboardMarkup:
+    """Метод создающий разметку сообщения
+
+    Returns:
+        InlineKeyboardMarkup: Разметка сообщения
+    """
+    hashtag_markup = InlineKeyboardMarkup()
+    for hashtag in db.tags:
+        print(f'\'{hashtag.get("tag")}\'')
+        hashtag_button = InlineKeyboardButton(f'\'{hashtag.get("tag")}\'',callback_data=f'\'{hashtag.get("tag")}\'')
+        hashtag_markup.add(hashtag_button)
+    return hashtag_markup
 
 
 async def callback_query(call, bot: AsyncTeleBot):
     log.info('callback data from callback query id %s is \'%s\'', call.id, call.data)
+    print(call)
     if call.data == 'accept':
-        await bot.send_message(admin.get('id'), 'Выберите хештеги для поста')
-        on_hashtag_choose()
+        await bot.send_message(call.from_user.id, 'Выберите хештеги для поста', reply_markup=create_hashtag_markup())
+    elif call.data == 'decline':
+        await bot.edit_message_text(chat_id=call.from_user.id, message_id=call.message.id, text=f'{call.message.text}\t😡ОТКЛОНЕНО😡')
 
 
-def on_hashtag_choose(message: Message):
+
+def on_hashtag_choose():
     pass
