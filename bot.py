@@ -7,7 +7,8 @@ from telebot.types import BotCommand
 from telebot.util import content_type_media
 from utils.logger import log
 from handlers.group import on_message_received
-from handlers.private import  callback_query
+from handlers.private import  callback_query, on_hashtag_choose
+
 
 __TOKEN = os.environ.get('TOKEN')
 bot = AsyncTeleBot('5546791980:AAEPW5wODZamrOp_jpxVlt6SNid9y4Dos0A', parse_mode='Markdown')
@@ -22,7 +23,6 @@ def register_handlers():
     bot.register_callback_query_handler(callback=callback_query,
                                         func=lambda call: True,
                                         pass_bot=True)
-
 
 register_handlers()
 print(content_type_media)
