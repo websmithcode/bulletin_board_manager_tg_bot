@@ -34,8 +34,6 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     message_type = message.content_type
     if message.chat.type not in ('group', 'supergroup'):
         return
-    print(message.caption)
-    print(message.photo)
     log.info('Received message: %s from %s, %s', text, name, message.from_user.id)
     if message_type in ('text', 'photo', 'video', 'document') and text:
         text += f'\n\n[{name}](tg://user?id={message.from_user.id})'
