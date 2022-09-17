@@ -9,7 +9,7 @@ class AdminDatabase():
     """Класс представляюший объект базы администраторов.
     """
     def __init__(self, **kwargs):
-        self.__db = TinyDB(kwargs.pop('db', 'admins'))
+        self.__db = TinyDB(kwargs.pop('db', 'admins'), encoding='utf8')
 
 
     @property
@@ -50,7 +50,7 @@ class TagDatabase():
     """Класс представляюший объект базы тегов.
     """
     def __init__(self, **kwargs):
-        self.__db = TinyDB(kwargs.pop('db', 'tags'))
+        self.__db = TinyDB(kwargs.pop('db', 'tags'), encoding='utf8')
 
 
     @property
