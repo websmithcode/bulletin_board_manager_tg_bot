@@ -3,9 +3,10 @@ from telebot.async_telebot import AsyncTeleBot
 
 from utils.logger import log
 
-from utils.database import TagDatabase
+from utils.database import TagDatabase, AdminDatabase
 
-db = TagDatabase()
+db_tags = TagDatabase()
+db_admins = AdminDatabase()
 
 
 def create_hashtag_markup() -> InlineKeyboardMarkup:
@@ -15,7 +16,7 @@ def create_hashtag_markup() -> InlineKeyboardMarkup:
         InlineKeyboardMarkup: Разметка сообщения
     """
     hashtag_markup = InlineKeyboardMarkup()
-    for hashtag in db.tags:
+    for hashtag in db_tags.tags:
         print(f'\'{hashtag.get("tag")}\'')
         hashtag_button = InlineKeyboardButton(f'\'{hashtag.get("tag")}\'',callback_data=f'\'{hashtag.get("tag")}\'')
         hashtag_markup.add(hashtag_button)
@@ -24,6 +25,11 @@ def create_hashtag_markup() -> InlineKeyboardMarkup:
 
 async def callback_query(call, bot: AsyncTeleBot):
     log.info('callback data from callback query id %s is \'%s\'', call.id, call.data)
+    
+    #Проверка на наличие пользователя в списке администраторов
+    if call.from_user.id not in [item['id'] for item in db_admins]:
+        return
+    
     print(call)
     if call.data == 'accept':
         await bot.send_message(call.from_user.id, 'Выберите хештеги для поста', reply_markup=create_hashtag_markup())
