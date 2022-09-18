@@ -18,33 +18,52 @@ def get_hashtag_markup() -> InlineKeyboardMarkup:
     """
     hashtag_markup = InlineKeyboardMarkup()
     for hashtag in db_tags.tags:
-        hashtag_button = InlineKeyboardButton(f'{hashtag.get("tag")}', callback_data=f'{hashtag.get("tag")}')
+        hashtag_button = InlineKeyboardButton(f'{hashtag.get("tag")}',
+                                              callback_data=f'{hashtag.get("tag")}')
         hashtag_markup.add(hashtag_button)
-    end_button = InlineKeyboardButton('Завершить выбор и отправить сообщение', callback_data=f'end_button')
+    end_button = InlineKeyboardButton('Завершить выбор и отправить сообщение',
+                                      callback_data='end_button')
     hashtag_markup.add(end_button)
     return hashtag_markup
 
 
-async def on_hashtag_choose(call, bot: AsyncTeleBot):
+async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     log.info('callback data from callback query id %s is \'%s\'', call.id, call.data)
-    hashtag_pul = {}
+    hashtag_pool = {}
 
     # Проверка на наличие пользователя в списке администраторов
     if not check_permissions(call.from_user.id):
         return
 
-    print(call)
+    #log.debug(call)
     if call.data == 'accept':
         await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id,
                                             reply_markup=get_hashtag_markup())
     elif call.data == 'decline':
-        await bot.edit_message_text(chat_id=call.from_user.id, message_id=call.message.id, text=f'{call.message.text}\n'
-                                                                                                  f'❌ОТКЛОНЕНО❌')
+        await bot.edit_message_text(chat_id=call.from_user.id,
+                                    message_id=call.message.id,
+                                    text=f'{call.message.text}\n❌ОТКЛОНЕНО❌')
     if '#' in call.data:
-        hashtag_pul[call.message.id].append(call.data)
+        log.debug(call)
+        hashtag_pool[call.message.id] = call.data
+        #FIXME: Проверка!!!!
+        await bot.edit_message_caption(caption=call.message.caption + f'\n\n{call.data}', chat_id=call.message.chat.id, message_id=call.message.id)
+        
+    log.debug(hashtag_pool)
 
-    print(hashtag_pul)
+    #log.debug(hashtag_pool)
     text = call.message.text if call.message.text else call.message.caption
+    log.debug(call.message.caption)
+    entities = call.message.entities if call.message.entities else call.message.caption_entities
+    
+    for entity in entities:
+        log.debug(entity.type)
+        if entity.type == 'text_mention':
+            log.debug('Проверяю entity: {}'.format(entity))
+            #log.debug(call.message.from_user)
+            text = text.replace(f'\n\n{entity.user.username}', '')
+            text += f'\n\n[{entity.user.username}](tg://user?id={entity.user.id})'
+    
     message_type = call.message.content_type
     params = {}
     # bot.register_next_step_handler(message, send_message_to_group)
