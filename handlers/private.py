@@ -63,15 +63,15 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
     text = call.message.text if call.message.text else call.message.caption
     log.debug(call.message.caption)
     entities = call.message.entities if call.message.entities else call.message.caption_entities
-    print(call.message)
+    log.debug(call.message)
 
     for entity in entities:
         log.debug(entity.type)
         if entity.type == 'text_mention':
             log.debug('Проверяю entity: {}'.format(entity))
             # log.debug(call.message.from_user)
-            text = text.replace(f'\n\n{entity.user.username}', '')
-            text += f'\n\n[{entity.user.username}](tg://user?id={entity.user.id})'
+            text = text.replace(f'\n\n{entity.user.username}',
+                                f'[{entity.user.username}](tg://user?id={entity.user.id})')
 
     message_type = call.message.content_type
     params = {}

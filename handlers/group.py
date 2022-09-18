@@ -35,7 +35,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     if message.chat.type not in ('group', 'supergroup'):
         return
     log.info('Received message: %s from %s, %s', text, name, message.from_user.id)
-    print(message)
+    log.debug(message)
     if message_type in ('text', 'photo', 'video', 'document') and text:
         text += f'\n\n[{name}](tg://user?id={message.from_user.id})'
         params = {'reply_markup': create_markup()}

@@ -11,13 +11,13 @@ from handlers.private import on_hashtag_choose, send_message_to_group, on_post_p
 from handlers.admin_configs import cmd_add_hashtag, cmd_add_admin, cmd_remove_admin, cmd_remove_hashtag
 
 __TOKEN = os.environ.get('TOKEN')
-bot = AsyncTeleBot('5546791980:AAEmXITmmxbtSuaaYU31xuNtC5yw2AsokIU', parse_mode='Markdown')
+bot = AsyncTeleBot(__TOKEN, parse_mode='Markdown')
 
 
 def register_handlers():
     """Регистрация хендлеров бота
     """
-    """Админские хендлеры"""
+    #Админские хендлеры
     bot.register_message_handler(callback=cmd_remove_hashtag,
                                  pass_bot=True,
                                  commands=['remove_hashtag'])
@@ -30,12 +30,12 @@ def register_handlers():
     bot.register_message_handler(callback=cmd_add_hashtag,
                                  commands=['add_hashtag'],
                                  pass_bot=True)
-    """"""
-    """Базовые Хендлеры"""
+
+    #Базовые Хендлеры
     bot.register_message_handler(callback=on_message_received,
                                  content_types=content_type_media,
                                  pass_bot=True)
-    """Обработчики запросов"""
+    #Обработчики запросов
     bot.register_callback_query_handler(callback=on_hashtag_choose,
                                         func=lambda call: '#' in call.data,
                                         pass_bot=True)
@@ -45,9 +45,8 @@ def register_handlers():
                                         pass_bot=True)
 
     bot.register_callback_query_handler(callback=on_post_processing,
-                                        func=lambda call: call.data == 'accept' or call.data == 'decline',
+                                        func=lambda call: call.data in ('accept', 'decline'),
                                         pass_bot=True)
-    """"""
 
 register_handlers()
 print(content_type_media)

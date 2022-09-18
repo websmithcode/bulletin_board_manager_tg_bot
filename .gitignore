@@ -3,7 +3,6 @@ Lib
 Scripts
 pyvenv.cfg
 .idea
-utils
 __pycache__
 .vscode/
 data.db
