@@ -8,10 +8,10 @@ from telebot.util import content_type_media
 from utils.logger import log
 from handlers.group import on_message_received
 from handlers.private import on_hashtag_choose, send_message_to_group, on_post_processing
-from handlers.admin_configs import cmd_add_hashtag, cmd_add_admin, cmd_remove_admin, cmd_remove_hashtag
+from handlers.admin_configs import cmd_add_hashtag, cmd_add_admin, cmd_remove_admin, cmd_remove_hashtag, cmd_add_ps
 
 __TOKEN = os.environ.get('TOKEN')
-bot = AsyncTeleBot(__TOKEN, parse_mode='Markdown')
+bot = AsyncTeleBot('5546791980:AAGkoP22nXJPqitgWZ5z1eMzwjhLOs3ShHw', parse_mode='Markdown')
 
 
 def register_handlers():
@@ -29,6 +29,9 @@ def register_handlers():
                                  pass_bot=True)
     bot.register_message_handler(callback=cmd_add_hashtag,
                                  commands=['add_hashtag'],
+                                 pass_bot=True)
+    bot.register_message_handler(callback=cmd_add_ps,
+                                 commands=['add_ps'],
                                  pass_bot=True)
 
     #Базовые Хендлеры

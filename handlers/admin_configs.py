@@ -43,3 +43,15 @@ async def cmd_remove_hashtag(message: Message, bot: AsyncTeleBot):
         hashtags = message.text.replace('/remove_hashtag', '').strip().split()
         for hashtag in hashtags:
             db_tags.remove_tag(hashtag)
+
+
+async def cmd_add_ps(message: Message, bot: AsyncTeleBot):
+    if not check_permissions(message.from_user.id):
+        await bot.reply_to(message, 'У вас нет прав на выполнение этой команды')
+    else:
+        text = message.text.replace('/add_ps', '')
+        print(text)
+        for item in db_admins.admins:
+            if message.from_user.id == item['id']:
+                db_admins.update(item['id'], {'ps': text})
+        print(db_admins.admins)

@@ -8,6 +8,7 @@ from utils.database import TagDatabase, AdminDatabase
 from handlers.admin_configs import check_permissions
 
 db_tags = TagDatabase()
+db_admins = AdminDatabase()
 
 
 def get_hashtag_markup() -> InlineKeyboardMarkup:
@@ -34,9 +35,22 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
     # Проверка на наличие пользователя в списке администраторов
     if not check_permissions(call.from_user.id):
         return
-
     # log.debug(call)
+
     if call.data == 'accept':
+        for item in db_admins.admins:
+            if call.from_user.id == item['id']:
+                if call.message.content_type == 'text':
+                    await bot.edit_message_text(chat_id=call.from_user.id,
+                                                message_id=call.message.id,
+                                                text=f'{call.message.text}\n' + 'P.S - ' + f'{item["ps"]}',
+                                                )
+                else:
+                    await bot.edit_message_caption(chat_id=call.from_user.id,
+                                                   message_id=call.message.id,
+                                                   caption=f'{call.message.text}\n' + 'P.S - ' + f'{item["ps"]}',
+                                                   )
+
         await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id,
                                             reply_markup=get_hashtag_markup())
     elif call.data == 'decline':
@@ -58,9 +72,8 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
                                     chat_id=call.message.chat.id,
                                     message_id=call.message.id,
                                     reply_markup=get_hashtag_markup())
+
     else:
-        if not call.message.caption:
-            call.message.caption = ' '
         await bot.edit_message_caption(caption=call.message.caption + f' {call.data}',
                                        chat_id=call.message.chat.id,
                                        message_id=call.message.id,
@@ -69,18 +82,10 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
 
 async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
     text = call.message.text if call.message.text else call.message.caption
-    entities = call.message.entities if call.message.entities else call.message.caption_entities
-    log.info('\nmethod: send_message_to_group\n'
-             'message: message with id %s\n '
-             'message: \'%s\' is sended', call.message.id, text)
+    log.info('call message from user: {}'.format(call.from_user.username))
 
-    for entity in entities:
-        log.debug(entity.type)
-        if entity.type == 'text_mention':
-            log.debug('Проверяю entity: {}'.format(entity))
-            # log.debug(call.message.from_user)
-            text = text.replace(f'\n\n{entity.user.username}',
-                                f'[{entity.user.username}](tg://user?id={entity.user.id})')
+    text = text.replace(f'{call.from_user.username}',
+                        f'[{call.from_user.username}](tg://user?id={call.from_user.id})\n')
 
     message_type = call.message.content_type
     params = {}
@@ -108,5 +113,9 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
 
     params['chat_id'] = -642685863
 
+    log.debug(F'params: {params["text"]}')
     await send(**params)
     await bot.edit_message_reply_markup(call.message.chat.id, message_id=call.message.message_id, reply_markup='')
+    log.info('\nmethod: send_message_to_group\n'
+             'message: message with id %s\n '
+             'message: \'%s\' is sended', call.message.id, text)
