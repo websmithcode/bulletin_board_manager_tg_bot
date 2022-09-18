@@ -29,9 +29,13 @@ class AdminDatabase():
         """
         _ = self.__db.insert({'id': value.pop('id'),
                           'username': value.pop('username'),
-                          'fullname': value.pop('fullname')})
+                          'fullname': value.pop('fullname'),
+                          'ps': value.pop('ps', None)})
         log.info('Запись администратора успешно добавлена! Id: %s.', str(_))
 
+
+    def update(self, id: int, query):
+        self.__db.update(query, admin.id == id)
 
     def remove_admin(self, **kwargs):
         """Метод позволяющий удалять администраторов из базы.
