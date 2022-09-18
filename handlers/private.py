@@ -28,8 +28,9 @@ def get_hashtag_markup() -> InlineKeyboardMarkup:
 
 
 async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
-    log.info('callback data from callback query id %s is \'%s\'', call.id, call.data)
-
+    log.info('\nmethod: on_post_processing\n'
+             'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
+    print(call)
     # Проверка на наличие пользователя в списке администраторов
     if not check_permissions(call.from_user.id):
         return
@@ -39,31 +40,39 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
         await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id,
                                             reply_markup=get_hashtag_markup())
     elif call.data == 'decline':
-        await bot.edit_message_text(chat_id=call.from_user.id,
-                                    message_id=call.message.id,
-                                    text=f'{call.message.text}\n❌ОТКЛОНЕНО❌')
+        if call.message.content_type == 'text':
+            await bot.edit_message_text(chat_id=call.from_user.id,
+                                        message_id=call.message.id,
+                                        text=f'{call.message.text}\n❌ОТКЛОНЕНО❌')
+        else:
+            await bot.edit_message_caption(chat_id=call.from_user.id,
+                                           message_id=call.message.id,
+                                           caption='❌ОТКЛОНЕНО❌')
 
 
 async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
-    if '#' in call.data:
-        log.debug(call)
-        if call.message.content_type == 'text':
-            await bot.edit_message_text(text=call.message.text + f'\n{call.data}',
-                                        chat_id=call.message.chat.id,
-                                        message_id=call.message.id,
-                                        reply_markup=get_hashtag_markup())
-        else:
-            await bot.edit_message_caption(caption=call.message.caption + f'\n{call.data}',
-                                           chat_id=call.message.chat.id,
-                                           message_id=call.message.id,
-                                           reply_markup=get_hashtag_markup())
+    log.info('\nmethod: on_hashtag_choose\n'
+             'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
+    if call.message.content_type == 'text':
+        await bot.edit_message_text(text=call.message.text + f' {call.data}',
+                                    chat_id=call.message.chat.id,
+                                    message_id=call.message.id,
+                                    reply_markup=get_hashtag_markup())
+    else:
+        if not call.message.caption:
+            call.message.caption = ' '
+        await bot.edit_message_caption(caption=call.message.caption + f' {call.data}',
+                                       chat_id=call.message.chat.id,
+                                       message_id=call.message.id,
+                                       reply_markup=get_hashtag_markup())
 
 
 async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
     text = call.message.text if call.message.text else call.message.caption
-    log.debug(call.message.caption)
     entities = call.message.entities if call.message.entities else call.message.caption_entities
-    print(call.message)
+    log.info('\nmethod: send_message_to_group\n'
+             'message: message with id %s\n '
+             'message: \'%s\' is sended', call.message.id, text)
 
     for entity in entities:
         log.debug(entity.type)
@@ -76,32 +85,28 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
     message_type = call.message.content_type
     params = {}
     # bot.register_next_step_handler(message, send_message_to_group)
-    if call.data == 'end_button':
+    if message_type == 'text':
+        send = bot.send_message
+        params['text'] = text
 
-        if message_type == 'text':
-            send = bot.send_message
-            params['text'] = text
+    elif message_type == 'photo':
+        send = bot.send_photo
+        params['caption'] = text
+        # возьмет только первое изображение
+        params['photo'] = call.message.json.get('photo')[0].get('file_id')
 
-        elif message_type == 'photo':
-            send = bot.send_photo
-            params['caption'] = text
-            # возьмет только первое изображение
-            params['photo'] = call.message.json.get('photo')[0].get('file_id')
+    elif message_type == 'video':
+        # не сработает
+        send = bot.send_video
+        params['caption'] = text
+        params['video'] = call.message.video.file_id
 
-        elif message_type == 'video':
-            # не сработает
-            send = bot.send_video
-            params['caption'] = text
-            params['video'] = call.message.video.file_id
+    else:
+        send = bot.send_document
+        params['document'] = call.message.document
+        params['caption'] = text
 
-        else:
-            send = bot.send_document
-            params['document'] = call.message.document
-            params['caption'] = text
+    params['chat_id'] = -642685863
 
-        params['chat_id'] = -642685863
-        log.debug(send)
-
-        await send(**params)
-        await bot.edit_message_reply_markup(call.message.chat.id, message_id=call.message.message_id, reply_markup='')
-    pass
+    await send(**params)
+    await bot.edit_message_reply_markup(call.message.chat.id, message_id=call.message.message_id, reply_markup='')
