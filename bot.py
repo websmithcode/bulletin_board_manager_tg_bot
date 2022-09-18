@@ -7,11 +7,11 @@ from telebot.types import BotCommand
 from telebot.util import content_type_media
 from utils.logger import log
 from handlers.group import on_message_received
-from handlers.private import on_hashtag_choose, send_message_to_group
+from handlers.private import on_hashtag_choose, send_message_to_group, on_post_processing
 from handlers.admin_configs import cmd_add_hashtag, cmd_add_admin, cmd_remove_admin, cmd_remove_hashtag
 
 __TOKEN = os.environ.get('TOKEN')
-bot = AsyncTeleBot('5546791980:AAE2P6kWGVuu18vs3DmVIQM7RyIo0KahgdY', parse_mode='Markdown')
+bot = AsyncTeleBot('5546791980:AAEmXITmmxbtSuaaYU31xuNtC5yw2AsokIU', parse_mode='Markdown')
 
 
 def register_handlers():
@@ -37,11 +37,15 @@ def register_handlers():
                                  pass_bot=True)
     """Обработчики запросов"""
     bot.register_callback_query_handler(callback=on_hashtag_choose,
-                                        func=lambda call: True,
+                                        func=lambda call: '#' in call.data,
                                         pass_bot=True)
 
     bot.register_callback_query_handler(callback=send_message_to_group,
-                                        func=lambda call: True,
+                                        func=lambda call: call.data == 'end_button',
+                                        pass_bot=True)
+
+    bot.register_callback_query_handler(callback=on_post_processing,
+                                        func=lambda call: call.data == 'accept' or call.data == 'decline',
                                         pass_bot=True)
     """"""
 

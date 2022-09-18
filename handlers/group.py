@@ -35,6 +35,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     if message.chat.type not in ('group', 'supergroup'):
         return
     log.info('Received message: %s from %s, %s', text, name, message.from_user.id)
+    print(message)
     if message_type in ('text', 'photo', 'video', 'document') and text:
         text += f'\n\n[{name}](tg://user?id={message.from_user.id})'
         params = {'reply_markup': create_markup()}
@@ -53,13 +54,13 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
             # не сработает
             send = bot.send_video
             params['caption'] = text
-            params['video'] = message.video
+            params['video'] = message.video.file_id
 
         else:
             send = bot.send_document
             params['document'] = message.document
             params['caption'] = text
-
+        print(params)
         for admin in db.admins:
             params['chat_id'] = admin.get('id')
             log.debug(send)
