@@ -36,7 +36,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
         return
     log.info('\nmethod: on_message_received\n'
              'Received message: %s from %s, %s', text, name, message.from_user.id)
-    print(message)
+    log.debug(message)
     if message_type in ('text', 'photo', 'video', 'document'):
         if text:
             text += f'\n\n[{name}](tg://user?id={message.from_user.id})'
