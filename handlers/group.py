@@ -34,10 +34,12 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     message_type = message.content_type
     if message.chat.type not in ('group', 'supergroup'):
         return
-    log.info('Received message: %s from %s, %s', text, name, message.from_user.id)
+    log.info('\nmethod: on_message_received\n'
+             'Received message: %s from %s, %s', text, name, message.from_user.id)
     log.debug(message)
-    if message_type in ('text', 'photo', 'video', 'document') and text:
-        text += f'\n\n[{name}](tg://user?id={message.from_user.id})'
+    if message_type in ('text', 'photo', 'video', 'document'):
+        if text:
+            text += f'\n\n[{name}](tg://user?id={message.from_user.id})'
         params = {'reply_markup': create_markup()}
 
         if message_type == 'text':
@@ -51,7 +53,6 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
             params['photo'] = message.json.get('photo')[0].get('file_id')
 
         elif message_type == 'video':
-            # не сработает
             send = bot.send_video
             params['caption'] = text
             params['video'] = message.video.file_id
@@ -60,10 +61,8 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
             send = bot.send_document
             params['document'] = message.document
             params['caption'] = text
-        print(params)
         for admin in db.admins:
             params['chat_id'] = admin.get('id')
-            log.debug(send)
             await send(**params)
 
     await bot.delete_message(message.chat.id, message.id)
