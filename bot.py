@@ -11,7 +11,7 @@ from handlers.private import on_hashtag_choose, send_message_to_group, on_post_p
 from handlers.admin_configs import cmd_add_hashtag, cmd_add_admin, cmd_remove_admin, cmd_remove_hashtag, cmd_add_ps
 
 __TOKEN = os.environ.get('TOKEN')
-bot = AsyncTeleBot('5546791980:AAGkoP22nXJPqitgWZ5z1eMzwjhLOs3ShHw', parse_mode='Markdown')
+bot = AsyncTeleBot(_TOKEN, parse_mode='Markdown')
 
 
 def register_handlers():

@@ -40,6 +40,8 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     if message_type in ('text', 'photo', 'video', 'document'):
         if text:
             text += f'\n\n[{name}](tg://user?id={message.from_user.id})'
+        else:
+            text = ''
         params = {'reply_markup': create_markup()}
 
         if message_type == 'text':
@@ -61,8 +63,13 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
             send = bot.send_document
             params['document'] = message.document
             params['caption'] = text
+
         for admin in db.admins:
             params['chat_id'] = admin.get('id')
+            if params.get('text', None):
+                params['text'] = text + f'\n{admin["ps"]}\n'
+            else:
+                params['caption'] = text + f'\n{admin["ps"]}\n'
             await send(**params)
 
     await bot.delete_message(message.chat.id, message.id)
