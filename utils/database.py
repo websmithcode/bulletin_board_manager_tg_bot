@@ -100,7 +100,7 @@ class UnmarkedMessages():
         """Сеттер поля сообщений, позволяющий добавлять документы в базу."""
         self.__db.insert({
             'message_type': value.pop('message_type'),
-            'uid': value.pop('message_id'), # 'chat_id!message_id'
+            'uid': value.pop('uid'), # 'chat_id!message_id'
             'message_id': value.pop('message_id'),
             'chat_id': value.pop('chat_id'),
             'text': value.pop('text', None),
@@ -113,12 +113,10 @@ class UnmarkedMessages():
             'sended_to': value.pop('sended_to', None),
         })
 
-
     def remove_message(self, uid: str):
         """Метод позволяющий удалять сообщений из базы."""
         _ = self.__db.remove_message(umassage.uid == uid)
         log.info('Сообщение удалено! Id: %s.', _)
-
 
     def next_state(self, uid: str):
         """Метод позволяющий перейти к следующему состоянию сообщения."""
