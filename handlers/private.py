@@ -1,11 +1,9 @@
-from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+"""Модуль хендлеров приватных сообщений."""
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from telebot.async_telebot import AsyncTeleBot
-
 from utils.logger import log
-
 from utils.database import TagDatabase, AdminDatabase
-
-from handlers.admin_configs import check_permissions
+from handlers.admin_configs import check_permissions, get_params_for_message, get_send_procedure
 
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
@@ -15,7 +13,7 @@ def get_hashtag_markup() -> InlineKeyboardMarkup:
     """Метод создающий разметку сообщения
 
     Returns:
-        InlineKeyboardMarkup: Разметка сообщения
+        `InlineKeyboardMarkup`: Разметка сообщения
     """
     hashtag_markup = InlineKeyboardMarkup()
     for hashtag in db_tags.tags:
@@ -29,6 +27,12 @@ def get_hashtag_markup() -> InlineKeyboardMarkup:
 
 
 async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
+    """Хендлер принятия и отклонения новых сообщений.
+
+    Args:
+        `call (CallbackQuery)`: Объект callback'а.
+        `bot (AsyncTeleBot)`: Объект бота.
+    """
     log.info('\nmethod: on_post_processing\n'
              'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
     # Проверка на наличие пользователя в списке администраторов
@@ -47,13 +51,20 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
         else:
             await bot.edit_message_caption(chat_id=call.from_user.id,
                                            message_id=call.message.id,
-                                           caption='❌ОТКЛОНЕНО❌')
+                                           caption=f'{call.message.caption}\n❌ОТКЛОНЕНО❌')
 
 
 async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
+    """Хендлер выбора хештегов новых сообщений.
+
+    Args:
+        `call (CallbackQuery)`: Объект callback'а.
+        `bot (AsyncTeleBot)`: Объект бота.
+    """
     log.info('\nmethod: on_hashtag_choose\n'
              'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
-    if call.message.text and call.message.text[0] != '#' or call.message.caption[0] != '#':
+    if (call.message.text and call.message.text[0] != '#') \
+        or (call.message.caption and call.message.caption[0] != '#'):
         call.data = call.data + '\n'
 
     if call.message.content_type == 'text':
@@ -70,39 +81,27 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
 
 
 async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
+    """Хендлер отправки сообщения в общую группу.
+
+    Args:
+        `call (CallbackQuery)`: Объект callback'а.
+        `bot (AsyncTeleBot)`: Объект бота.
+    """
     text = call.message.text if call.message.text else call.message.caption
-    log.info('call message from user: {}'.format(call.from_user.username))
+    log.info('call message from user: %s', call.from_user.username)
 
     text = text.replace(f'{call.from_user.username}',
                         f'[{call.from_user.username}](tg://user?id={call.from_user.id})\n')
     message_type = call.message.content_type
-    params = {}
-    # bot.register_next_step_handler(message, send_message_to_group)
-    if message_type == 'text':
-        send = bot.send_message
-        params['text'] = text
 
-    elif message_type == 'photo':
-        send = bot.send_photo
-        params['caption'] = text
-        # возьмет только первое изображение
-        params['photo'] = call.message.json.get('photo')[0].get('file_id')
-
-    elif message_type == 'video':
-        # не сработает
-        send = bot.send_video
-        params['caption'] = text
-        params['video'] = call.message.video.file_id
-
-    else:
-        send = bot.send_document
-        params['document'] = call.message.document
-        params['caption'] = text
-
+    params = get_params_for_message(text, call.message)
     params['chat_id'] = -642685863
+
     # log.debug(F'params: {params[text]}')
-    await send(**params)
-    await bot.edit_message_reply_markup(call.message.chat.id, message_id=call.message.message_id, reply_markup='')
+    await get_send_procedure(message_type, bot)(**params)
+    await bot.edit_message_reply_markup(call.message.chat.id,
+                                        message_id=call.message.message_id,
+                                        reply_markup='')
     log.info('\nmethod: send_message_to_group\n'
              'message: message with id %s\n '
              'message: \'%s\' is sended', call.message.id, text)

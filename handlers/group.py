@@ -1,10 +1,9 @@
 """Модуль групповых хендлеров"""
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from telebot.async_telebot import AsyncTeleBot
-
 from utils.logger import log
-
 from utils.database import AdminDatabase
+from handlers.admin_configs import get_params_for_message, get_send_procedure
 
 db = AdminDatabase()
 
@@ -13,7 +12,7 @@ def create_markup() -> InlineKeyboardButton:
     """Метод создающий разметку сообщения
 
     Returns:
-        InlineKeyboardButton: Разметка сообщения
+        `InlineKeyboardButton`: Разметка сообщения
     """
     message_check_markup = InlineKeyboardMarkup()
     accept_button = InlineKeyboardButton('Принять', callback_data='accept')
@@ -26,8 +25,8 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     """Хендлер срабатывающий на сообщения в чате
 
     Args:
-        message (Message): объект сообщения
-        bot (AsyncTeleBot): объект бота
+        `message (Message)`: объект сообщения
+        `bot (AsyncTeleBot)`: объект бота
     """
     name = message.from_user.username if message.from_user.username else message.from_user.full_name
     text = message.text if message.text else message.caption
@@ -42,35 +41,19 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
             text += f'\n\n[{name}](tg://user?id={message.from_user.id})'
         else:
             text = ''
-        params = {'reply_markup': create_markup()}
 
-        if message_type == 'text':
-            send = bot.send_message
-            params['text'] = text
-
-        elif message_type == 'photo':
-            send = bot.send_photo
-            params['caption'] = text
-            # возьмет только первое изображение
-            params['photo'] = message.json.get('photo')[0].get('file_id')
-
-        elif message_type == 'video':
-            send = bot.send_video
-            params['caption'] = text
-            params['video'] = message.video.file_id
-
-        else:
-            send = bot.send_document
-            params['document'] = message.document
-            params['caption'] = text
+        params = get_params_for_message(text, message)
+        #log.debug(params)
+        params['reply_markup'] = create_markup()
 
         for admin in db.admins:
             params['chat_id'] = admin.get('id')
             if params.get('text', None):
                 params['text'] = text + f'\n{admin["ps"]}\n'
-            else:
+            elif params.get('caption', None):
                 params['caption'] = text + f'\n{admin["ps"]}\n'
-            await send(**params)
+            #log.debug(params)
+            await get_send_procedure(message_type, bot)(**params)
 
     await bot.delete_message(message.chat.id, message.id)
     #сохраняем сообщение

@@ -8,15 +8,18 @@ from telebot.util import content_type_media
 from utils.logger import log
 from handlers.group import on_message_received
 from handlers.private import on_hashtag_choose, send_message_to_group, on_post_processing
-from handlers.admin_configs import cmd_add_hashtag, cmd_add_admin, cmd_remove_admin, cmd_remove_hashtag, cmd_add_ps
+from handlers.admin_configs import (cmd_add_hashtag,
+                                    cmd_add_admin,
+                                    cmd_remove_admin,
+                                    cmd_remove_hashtag,
+                                    cmd_add_ps)
 
 __TOKEN = os.environ.get('TOKEN')
-bot = AsyncTeleBot(_TOKEN, parse_mode='Markdown')
+bot = AsyncTeleBot(__TOKEN, parse_mode='Markdown')
 
 
 def register_handlers():
-    """Регистрация хендлеров бота
-    """
+    """Регистрация хендлеров бота"""
     #Админские хендлеры
     bot.register_message_handler(callback=cmd_remove_hashtag,
                                  pass_bot=True,
