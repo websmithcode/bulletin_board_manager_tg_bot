@@ -2,10 +2,19 @@
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from telebot.async_telebot import AsyncTeleBot
 from utils.logger import log
-from utils.database import AdminDatabase
+import asyncio
+from utils.database import AdminDatabase, UnmarkedMessages
 from handlers.admin_configs import get_params_for_message, get_send_procedure
 
-db = AdminDatabase()
+db_admins = AdminDatabase()
+db_messages = UnmarkedMessages()
+
+
+async def send_info_message(message, bot: AsyncTeleBot):
+    message = await bot.send_message(message.chat.id, f'Спасибо за пост, [{message.from_user.username}](tg://user?id={message.from_user.id}), '
+                                                       'он будет опубликован после проверки администратора')
+    await asyncio.sleep(15)
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
 
 
 def create_markup() -> InlineKeyboardButton:
@@ -43,20 +52,20 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
             text = ''
 
         params = get_params_for_message(text, message)
-        #log.debug(params)
+        # log.debug(params)
         params['reply_markup'] = create_markup()
 
-        for admin in db.admins:
+        for admin in db_admins.admins:
             params['chat_id'] = admin.get('id')
             if params.get('text', None):
                 params['text'] = text + f'\n{admin["ps"]}\n'
             elif params.get('caption', None):
                 params['caption'] = text + f'\n{admin["ps"]}\n'
-            #log.debug(params)
+            # log.debug(params)
             await get_send_procedure(message_type, bot)(**params)
 
     await bot.delete_message(message.chat.id, message.id)
-    #сохраняем сообщение
-    #удаляем сообщение
-    #отправляем админам
-    
+    await send_info_message(message, bot)
+    # сохраняем сообщение
+    # удаляем сообщение
+    # отправляем админам

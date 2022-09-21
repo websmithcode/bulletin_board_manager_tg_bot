@@ -46,10 +46,18 @@ async def cmd_add_admin(message: Message, bot: AsyncTeleBot):
     if not check_permissions(message.from_user.id):
         await bot.reply_to(message, 'У вас нет прав на выполнение этой команды')
     else:
+        fullname = ''
         contact = message.contact
+        print(contact)
+        if contact.first_name:
+            fullname = fullname + contact.first_name
+        if contact.last_name:
+            fullname = fullname + contact.last_name
         db_admins.admins = {'id': contact.user_id,
-                            'fullname': contact.first_name + contact.last_name,
-                            'username': None}
+                            'fullname': fullname,
+                            'username': None,
+                            'ps': " "}
+    print(db_admins.admins)
 
 
 async def cmd_remove_admin(message: Message, bot: AsyncTeleBot):
