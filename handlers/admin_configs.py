@@ -100,10 +100,12 @@ async def cmd_add_ps(message: Message, bot: AsyncTeleBot):
         await bot.reply_to(message, 'У вас нет прав на выполнение этой команды')
     else:
         text = message.text.replace('/add_ps ', '')
-        print(text)
-        for item in db_admins.admins:
-            if message.from_user.id == item['id']:
-                db_admins.update(item['id'], {'ps': text})
+        if text == '/add_ps':
+            await bot.reply_to(message, 'Примечание не указано!')
+        else:
+            for item in db_admins.admins:
+                if message.from_user.id == item['id']:
+                    db_admins.update(item['id'], {'ps': text})
         print(db_admins.admins)
 
 

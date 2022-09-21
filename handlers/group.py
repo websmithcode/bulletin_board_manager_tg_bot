@@ -1,7 +1,9 @@
 """Модуль групповых хендлеров"""
+from utils.states import MyStates
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from telebot.async_telebot import AsyncTeleBot
 from utils.logger import log
+from telebot import asyncio_filters
 import asyncio
 from utils.database import AdminDatabase, UnmarkedMessages
 from handlers.admin_configs import get_params_for_message, get_send_procedure
@@ -37,6 +39,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
         `message (Message)`: объект сообщения
         `bot (AsyncTeleBot)`: объект бота
     """
+
     name = message.from_user.username if message.from_user.username else message.from_user.full_name
     text = message.text if message.text else message.caption
     message_type = message.content_type
@@ -63,6 +66,19 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
                 params['caption'] = text + f'\n{admin["ps"]}\n'
             # log.debug(params)
             await get_send_procedure(message_type, bot)(**params)
+
+    db_messages.messages = {'message_type': message.content_type,
+                            'uid': str(message.chat.id) + '!' + str(message.id),
+                            'message_id': message.id,
+                            'chat_id': message.chat.id,
+                            'text': message.text,
+                            'caption': message.caption,
+                            'photo': message.json.get('photo', [{}])[0].get('file_id', None),
+                            'video': message.json.get('video', {}).get('file_id', None),
+                            'audio': message.audio,
+                            'sender_id': message.from_user.id}
+
+
 
     await bot.delete_message(message.chat.id, message.id)
     await send_info_message(message, bot)
