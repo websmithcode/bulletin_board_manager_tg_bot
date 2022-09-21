@@ -9,3 +9,4 @@ data.db
 admins
 tags
 .env
+unmarked_messages
