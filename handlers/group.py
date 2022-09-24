@@ -1,5 +1,4 @@
 """Модуль групповых хендлеров"""
-from utils.states import MyStates
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from telebot.async_telebot import AsyncTeleBot
 from utils.logger import log
@@ -48,7 +47,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     log.info('\nmethod: on_message_received\n'
              'Received message: %s from %s, %s', text, name, message.from_user.id)
     log.debug(message)
-    if message_type in ('text', 'photo', 'video', 'document'):
+    if message_type in ('text', 'photo', 'video', 'document', 'hashtag'):
         if text:
             text += f'\n\n[{name}](tg://user?id={message.from_user.id})'
         else:

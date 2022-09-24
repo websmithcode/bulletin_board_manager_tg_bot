@@ -1,9 +1,11 @@
 """Модуль предназначенный для работы с базой данных"""
 from typing import Dict, List
+from tinydb.storages import MemoryStorage
 from tinydb import TinyDB, Query
 from utils.logger import log
 
 admin = Query()
+memory = TinyDB(storage=MemoryStorage)
 class AdminDatabase():
     """Класс представляюший объект базы администраторов."""
     def __init__(self, **kwargs):

@@ -8,6 +8,8 @@ db_tags = TagDatabase()
 db_admins = AdminDatabase()
 
 
+
+
 def check_permissions(user_id: int) -> bool:
     """Метод проверяющий наличие прав у пользователя.
 
@@ -34,6 +36,7 @@ async def cmd_add_hashtag(message: Message, bot: AsyncTeleBot):
         hashtags = text.split()
         for hashtag in hashtags:
             db_tags.tags = hashtag
+        await bot.reply_to(message, "Хештег добавлен!")
 
 
 async def cmd_add_admin(message: Message, bot: AsyncTeleBot):
@@ -87,6 +90,7 @@ async def cmd_remove_hashtag(message: Message, bot: AsyncTeleBot):
         hashtags = message.text.replace('/remove_hashtag', '').strip().split()
         for hashtag in hashtags:
             db_tags.remove_tag(hashtag)
+        await bot.reply_to(message, "Хештег удален!")
 
 
 async def cmd_add_ps(message: Message, bot: AsyncTeleBot):
