@@ -113,7 +113,7 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
     message_type = call.message.content_type
 
     params = get_params_for_message(text, call.message)
-    params['chat_id'] = -642685863
+    params['chat_id'] = os.environ.get('CHAT_ID')
 
     # log.debug(F'params: {params[text]}')
     print(params)
