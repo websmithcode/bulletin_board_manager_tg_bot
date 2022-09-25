@@ -1,4 +1,5 @@
 """Модуль хендлеров приватных сообщений."""
+import os
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from telebot.async_telebot import AsyncTeleBot
 from utils.logger import log
