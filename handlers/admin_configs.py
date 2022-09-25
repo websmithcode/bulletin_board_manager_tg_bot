@@ -127,7 +127,8 @@ def params_mapping(message_type: str, params: Dict) -> Dict:
         'photo': ['caption', 'photo'],
         'video': ['caption', 'video'],
         'document': ['caption', 'document'],
-        'text': ['text']
+        'text': ['text'],
+        'animation': ['caption', 'animation']
     }
     map_list = [v for k in _map for v in _map[k]] #pylint: disable=consider-using-dict-items
     wanted = [wanted for _type in _map for wanted in _map[_type] if _type == message_type] #pylint: disable=consider-using-dict-items
@@ -166,7 +167,8 @@ def get_params_for_message(message_text: str, message: Message) -> Dict:
     'caption': message_text,
     'photo': message.json.get('photo', [{}])[0].get('file_id', None),
     'video': message.json.get('video', {}).get('file_id',None),
-    'document': message.document,
+    'document': message.document.file_id,
+    'animation': message.animation.file_id
     }
 
     return params_mapping(message.content_type, params)

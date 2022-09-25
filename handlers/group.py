@@ -47,11 +47,11 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     log.info('\nmethod: on_message_received\n'
              'Received message: %s from %s, %s', text, name, message.from_user.id)
     log.debug(message)
-    if message_type in ('text', 'photo', 'video', 'document', 'hashtag'):
+    if message_type in ('text', 'photo', 'video', 'document', 'hashtag', 'animation'):
         if text:
             text += f'\n\n[{name}](tg://user?id={message.from_user.id})'
         else:
-            text = ''
+            text = f'\n\n[{name}](tg://user?id={message.from_user.id})'
 
         params = get_params_for_message(text, message)
         # log.debug(params)
@@ -63,19 +63,19 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
                 params['text'] = text + f'\n{admin["ps"]}\n'
             elif params.get('caption', None):
                 params['caption'] = text + f'\n{admin["ps"]}\n'
-            # log.debug(params)
+            log.debug(f'params: {params}')
             await get_send_procedure(message_type, bot)(**params)
 
-    db_messages.messages = {'message_type': message.content_type,
-                            'uid': str(message.chat.id) + '!' + str(message.id),
-                            'message_id': message.id,
-                            'chat_id': message.chat.id,
-                            'text': message.text,
-                            'caption': message.caption,
-                            'photo': message.json.get('photo', [{}])[0].get('file_id', None),
-                            'video': message.json.get('video', {}).get('file_id', None),
-                            'audio': message.audio,
-                            'sender_id': message.from_user.id}
+    # db_messages.messages = {'message_type': message.content_type,
+    #                         'uid': str(message.chat.id) + '!' + str(message.id),
+    #                         'message_id': message.id,
+    #                         'chat_id': message.chat.id,
+    #                         'text': message.text,
+    #                         'caption': message.caption,
+    #                         'photo': message.json.get('photo', [{}])[0].get('file_id', None),
+    #                         'video': message.json.get('video', {}).get('file_id', None),
+    #                         'audio': message.audio,
+    #                         'sender_id': message.from_user.id}
 
 
 
