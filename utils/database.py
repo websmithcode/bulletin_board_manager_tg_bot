@@ -9,7 +9,7 @@ memory = TinyDB(storage=MemoryStorage)
 class AdminDatabase():
     """Класс представляюший объект базы администраторов."""
     def __init__(self, **kwargs):
-        self.__db = TinyDB(kwargs.pop('db', 'admins'), encoding='utf8')
+        self.__db = TinyDB(kwargs.pop('db', 'data/admins'), encoding='utf8')
 
 
     @property
@@ -57,7 +57,7 @@ tag = Query()
 class TagDatabase():
     """Класс представляюший объект базы тегов."""
     def __init__(self, **kwargs):
-        self.__db = TinyDB(kwargs.pop('db', 'tags'), encoding='utf8')
+        self.__db = TinyDB(kwargs.pop('db', 'data/tags'), encoding='utf8')
 
 
     @property
