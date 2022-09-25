@@ -28,7 +28,7 @@ from utils.states import MyStates
 
 
 __TOKEN = os.environ.get('TOKEN')
-bot = AsyncTeleBot('5546791980:AAEDh8LRJLQqNoxSsa0NSjwpqoDXQ1J8fno', parse_mode='Markdown',
+bot = AsyncTeleBot(__TOKEN, parse_mode='Markdown',
                    state_storage=StateMemoryStorage())
 
 
@@ -53,10 +53,10 @@ def register_handlers():
 
     '''Хендлеры для команд администратора через кнопки'''
     bot.register_message_handler(callback=get_commands_markup,
-                                 commands=['commands'],
+                                 commands=['start'],
                                  pass_bot=True)
     bot.register_message_handler(callback=on_button_choose,
-                                 state="*",
+                                 state=MyStates.on_button_choose,
                                  pass_bot=True)
     bot.register_message_handler(callback=on_hashtag_add,
                                  state=MyStates.on_hashtag_add,

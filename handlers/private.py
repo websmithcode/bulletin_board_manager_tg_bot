@@ -5,7 +5,7 @@ from utils.logger import log
 from utils.database import TagDatabase, AdminDatabase
 from handlers.admin_configs import check_permissions, get_params_for_message, get_send_procedure
 from utils.database import memory as messages
-
+from tinydb import Query
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
 
@@ -36,7 +36,8 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
     """
     log.info('\nmethod: on_post_processing\n'
              'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
-    messages.insert({call.message.id: call.message.json})
+    messages.insert({'id': call.message.id, 'body': call.message.json})
+    print(call.message.json)
     # Проверка на наличие пользователя в списке администраторов
     if not check_permissions(call.from_user.id):
         return
@@ -54,6 +55,7 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
             await bot.edit_message_caption(chat_id=call.from_user.id,
                                            message_id=call.message.id,
                                            caption=f'{call.message.caption}\n❌ОТКЛОНЕНО❌')
+
 
 async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     """Хендлер выбора хештегов новых сообщений.
@@ -75,6 +77,7 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
                                     reply_markup=get_hashtag_markup())
 
     else:
+        call.message.caption = '' if not call.message.caption else call.message.caption
         await bot.edit_message_caption(caption=f'{call.data} ' + call.message.caption,
                                        chat_id=call.message.chat.id,
                                        message_id=call.message.id,
@@ -90,14 +93,23 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
     """
     text = call.message.text if call.message.text else call.message.caption
     log.info('call message from user: %s', call.from_user.username)
+    if text is None:
+        text = ''
     for m in messages.all():
-        if m.get(call.message.id, None):
-            print(m.get(call.message.id))
-            print(m.get(call.message.id)["entities"][0]["user"]["username"])
-    for m in messages.all():
-        if m.get(call.message.id, None):
-            text = text.replace(f'{m.get(call.message.id)["entities"][0]["user"]["username"]}',
-                                f'[{m.get(call.message.id)["entities"][0]["user"]["username"]}](tg://user?id={m.get(call.message.id)["entities"][0]["user"]["id"]})\n')
+        if m.get("body").get("entities", None):
+            if m.get('id', None) == call.message.id:
+                print(m)
+                username = m.get("body")["entities"][0]["user"]["username"]
+                user_id = m.get("body")["entities"][0]["user"]["id"]
+                text = text.replace(f'{username}',
+                                    f'[{username}](tg://user?id={user_id})\n')
+        else:
+            if m.get('id', None) == call.message.id:
+                print(m)
+                username = m.get("body")["caption_entities"][0]["user"]["username"]
+                user_id = m.get("body")["caption_entities"][0]["user"]["id"]
+                text = text.replace(f'{username}',
+                                    f'[{username}](tg://user?id={user_id})\n')
     message_type = call.message.content_type
 
     params = get_params_for_message(text, call.message)
@@ -109,6 +121,9 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
     await bot.edit_message_reply_markup(call.message.chat.id,
                                         message_id=call.message.message_id,
                                         reply_markup='')
+
+    result = messages.remove(Query().id == call.message.id)
+    log.debug(f'result: {result}')
     log.info('\nmethod: send_message_to_group\n'
              'message: message with id %s\n '
              'message: \'%s\' is sended', call.message.id, text)
