@@ -1,0 +1,13 @@
+Include
+Lib
+Scripts
+pyvenv.cfg
+.idea
+__pycache__
+.vscode/
+data.db
+admins
+tags
+.env
+unmarked_messages
+.gitignore
