@@ -1,4 +1,4 @@
-FROM python/alpine:3.11-rc
+FROM python:3.11-rc
 
 COPY requirements.txt .
 
