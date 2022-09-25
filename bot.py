@@ -14,8 +14,22 @@ from handlers.admin_configs import (cmd_add_hashtag,
                                     cmd_remove_hashtag,
                                     cmd_add_ps)
 
+from handlers.admin_commands import get_commands_markup, \
+    on_button_choose, \
+    on_hashtag_add, \
+    on_ps_add, \
+    on_hashtag_delete, \
+    on_list_of_hashtags, \
+    on_decline
+
+from telebot.asyncio_storage import StateMemoryStorage
+from telebot import asyncio_filters
+from utils.states import MyStates
+
+
 __TOKEN = os.environ.get('TOKEN')
-bot = AsyncTeleBot(__TOKEN, parse_mode='Markdown')
+bot = AsyncTeleBot('5546791980:AAEDh8LRJLQqNoxSsa0NSjwpqoDXQ1J8fno', parse_mode='Markdown',
+                   state_storage=StateMemoryStorage())
 
 
 def register_handlers():
@@ -37,6 +51,24 @@ def register_handlers():
                                  commands=['add_ps'],
                                  pass_bot=True)
 
+    '''Хендлеры для команд администратора через кнопки'''
+    bot.register_message_handler(callback=get_commands_markup,
+                                 commands=['commands'],
+                                 pass_bot=True)
+    bot.register_message_handler(callback=on_button_choose,
+                                 state="*",
+                                 pass_bot=True)
+    bot.register_message_handler(callback=on_hashtag_add,
+                                 state=MyStates.on_hashtag_add,
+                                 pass_bot=True)
+    bot.register_message_handler(callback=on_hashtag_delete,
+                                 state=MyStates.on_hashtag_delete,
+                                 pass_bot=True)
+    bot.register_message_handler(callback=on_ps_add,
+                                 state=MyStates.on_ps_add,
+                                 pass_bot=True)
+    '''-----------------------------------------------'''
+
     #Базовые Хендлеры
     bot.register_message_handler(callback=on_message_received,
                                  content_types=content_type_media,
@@ -57,6 +89,9 @@ def register_handlers():
 register_handlers()
 print(content_type_media)
 
+
+bot.add_custom_filter(asyncio_filters.StateFilter(bot))
+bot.add_custom_filter(asyncio_filters.IsDigitFilter())
 
 # async def set_commands():
 #     await bot.set_my_commands(commands=[BotCommand()])
