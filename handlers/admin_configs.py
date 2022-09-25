@@ -167,8 +167,8 @@ def get_params_for_message(message_text: str, message: Message) -> Dict:
     'caption': message_text,
     'photo': message.json.get('photo', [{}])[0].get('file_id', None),
     'video': message.json.get('video', {}).get('file_id',None),
-    'document': message.document.file_id,
-    'animation': message.animation.file_id
+    'document': message.json.get('document', {}).get('file_id', None),
+    'animation': message.json.get('animation', {}).get('file_id', None)
     }
 
     return params_mapping(message.content_type, params)
