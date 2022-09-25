@@ -14,13 +14,13 @@ from handlers.admin_configs import (cmd_add_hashtag,
                                     cmd_remove_hashtag,
                                     cmd_add_ps)
 
-from handlers.admin_commands import get_commands_markup, \
-    on_button_choose, \
-    on_hashtag_add, \
-    on_ps_add, \
-    on_hashtag_delete, \
-    on_list_of_hashtags, \
-    on_decline
+from handlers.admin_commands import (get_commands_markup, 
+                                     on_button_choose, 
+                                     on_hashtag_add, 
+                                     on_ps_add, 
+                                     on_hashtag_delete, 
+                                     on_list_of_hashtags, 
+                                     on_decline)
 
 from telebot.asyncio_storage import StateMemoryStorage
 from telebot import asyncio_filters
