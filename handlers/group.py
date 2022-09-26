@@ -1,9 +1,8 @@
 """Модуль групповых хендлеров"""
+import asyncio
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from telebot.async_telebot import AsyncTeleBot
 from utils.logger import log
-from telebot import asyncio_filters
-import asyncio
 from utils.database import AdminDatabase, UnmarkedMessages
 from handlers.admin_configs import get_params_for_message, get_send_procedure
 
@@ -63,9 +62,9 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
         for admin in db_admins.admins:
             params['chat_id'] = admin.get('id')
             if params.get('text', None):
-                params['text'] = text + f'\n{admin["ps"]}\n'
+                params['text'] = text
             elif params.get('caption', None):
-                params['caption'] = text + f'\n{admin["ps"]}\n'
+                params['caption'] = text
             log.debug(f'params: {params}')
             await get_send_procedure(message_type, bot)(**params)
 

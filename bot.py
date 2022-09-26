@@ -14,6 +14,7 @@ from handlers.admin_configs import (cmd_add_hashtag,
                                     cmd_remove_hashtag,
                                     cmd_add_ps)
 
+
 from handlers.admin_commands import (get_commands_markup, 
                                      on_button_choose, 
                                      on_hashtag_add, 
@@ -26,7 +27,6 @@ from telebot.asyncio_storage import StateMemoryStorage
 from telebot import asyncio_filters
 from utils.states import MyStates
 
-
 __TOKEN = os.environ.get('TOKEN')
 bot = AsyncTeleBot(__TOKEN, parse_mode='Markdown',
                    state_storage=StateMemoryStorage())
@@ -34,7 +34,7 @@ bot = AsyncTeleBot(__TOKEN, parse_mode='Markdown',
 
 def register_handlers():
     """Регистрация хендлеров бота"""
-    #Админские хендлеры
+    # Админские хендлеры
     bot.register_message_handler(callback=cmd_remove_hashtag,
                                  pass_bot=True,
                                  commands=['remove_hashtag'])
@@ -69,11 +69,11 @@ def register_handlers():
                                  pass_bot=True)
     '''-----------------------------------------------'''
 
-    #Базовые Хендлеры
+    # Базовые Хендлеры
     bot.register_message_handler(callback=on_message_received,
                                  content_types=content_type_media,
                                  pass_bot=True)
-    #Обработчики запросов
+    # Обработчики запросов
     bot.register_callback_query_handler(callback=on_hashtag_choose,
                                         func=lambda call: '#' in call.data,
                                         pass_bot=True)
@@ -86,12 +86,13 @@ def register_handlers():
                                         func=lambda call: call.data in ('accept', 'decline'),
                                         pass_bot=True)
 
-register_handlers()
-print(content_type_media)
 
+register_handlers()
+# print(content_type_media)
 
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))
 bot.add_custom_filter(asyncio_filters.IsDigitFilter())
+
 
 # async def set_commands():
 #     await bot.set_my_commands(commands=[BotCommand()])
