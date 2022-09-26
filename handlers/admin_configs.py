@@ -154,8 +154,9 @@ def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable: #pylin
 
 
 def string_builder(**kwargs):
-    text = f"{' '.join([tag for tag in kwargs.pop('tags', [])])} \n"\
-    f"{kwargs.pop('text')}\n\n"\
+    text = f"{' '.join([tag for tag in kwargs.pop('tags', [])])}\n"\
+    f"\n{kwargs.pop('text')}\n\n"\
+    "\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_"\
     'Если вас заинтересовало данное предложение напишите:\n'\
     f"[{kwargs.pop('username')}](tg://user?id={kwargs.pop('user_id')})\n\n"\
     f"{kwargs.pop('ps')}"
