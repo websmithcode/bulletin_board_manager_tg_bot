@@ -75,7 +75,7 @@ async def cmd_remove_admin(message: Message, bot: AsyncTeleBot):
         await bot.reply_to(message, 'У вас нет прав на выполнение этой команды')
     else:
         text = message.text.replace('/remove_admin', '').strip().replace('@', '')
-        db_admins.remove_admin(username=text)
+        db_admins.remove_admin(id=text)
 
 
 async def cmd_remove_hashtag(message: Message, bot: AsyncTeleBot):
