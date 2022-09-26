@@ -38,7 +38,10 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
         `message (Message)`: объект сообщения
         `bot (AsyncTeleBot)`: объект бота
     """
-
+    
+    if message.from_user.is_bot:
+        return 
+    
     name = message.from_user.username if message.from_user.username else message.from_user.full_name
     text = message.text if message.text else message.caption
     message_type = message.content_type
