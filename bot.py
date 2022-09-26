@@ -87,7 +87,7 @@ def register_handlers():
                                         pass_bot=True)
 
 register_handlers()
-print(content_type_media)
+# print(content_type_media)
 
 
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))
