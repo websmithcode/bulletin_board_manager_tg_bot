@@ -133,8 +133,9 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
 
     params = get_params_for_message(text, call.message)
     params['chat_id'] = os.environ.get('CHAT_ID')
-    params['disable_web_page_preview'] = True
-    
+    if message_type == 'text':
+        params['disable_web_page_preview'] = True
+
     # log.debug(F'params: {params[text]}')
     print(params)
     await get_send_procedure(message_type, bot)(**params)
