@@ -11,3 +11,4 @@ tags
 .env
 unmarked_messages
 .gitignore
+*.sh

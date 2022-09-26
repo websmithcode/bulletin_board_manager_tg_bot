@@ -14,12 +14,13 @@ from handlers.admin_configs import (cmd_add_hashtag,
                                     cmd_remove_hashtag,
                                     cmd_add_ps)
 
-from handlers.admin_commands import (get_commands_markup,
-                                     on_button_choose,
-                                     on_hashtag_add,
-                                     on_ps_add,
-                                     on_hashtag_delete,
-                                     on_list_of_hashtags,
+
+from handlers.admin_commands import (get_commands_markup, 
+                                     on_button_choose, 
+                                     on_hashtag_add, 
+                                     on_ps_add, 
+                                     on_hashtag_delete, 
+                                     on_list_of_hashtags, 
                                      on_decline)
 
 from telebot.asyncio_storage import StateMemoryStorage
@@ -87,7 +88,7 @@ def register_handlers():
 
 
 register_handlers()
-print(content_type_media)
+# print(content_type_media)
 
 bot.add_custom_filter(asyncio_filters.StateFilter(bot))
 bot.add_custom_filter(asyncio_filters.IsDigitFilter())

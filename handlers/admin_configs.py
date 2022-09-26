@@ -1,8 +1,9 @@
 """Модуль различных хендлеров и вспомогательных методов."""
 from typing import Callable, Dict
+from tinydb.table import Document
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import Message
-from utils.database import AdminDatabase, TagDatabase
+from utils.database import AdminDatabase, TagDatabase, memory
 
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
@@ -152,6 +153,47 @@ def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable: #pylin
     return eval(f'bot.send_{message_type}') #pylint: disable=eval-used
 
 
+def string_builder(**kwargs):
+    text = f"{' '.join([tag for tag in kwargs.pop('tags', [])])} \n"\
+    f"{kwargs.pop('text')}\n\n"\
+    'Если вас заинтересовало данное предложение напишите:\n'\
+    f"[{kwargs.pop('username')}](tg://user?id={kwargs.pop('user_id')})\n\n"\
+    f"{kwargs.pop('ps')}"
+    
+    return text
+
+
+
+def parse_and_update(message_record: Document, **kwargs):
+    body = kwargs.pop('body', None)
+    if not kwargs.pop('flag', False):
+        entities = body.get('entities', None) if body.get('entities', None) else body.get('caption_entities', None)
+        username = entities[0].get('user').get('username')
+        user_id = entities[0].get('user').get('id')
+        text = body.get('text', None) if body.get('text', None) else body.get('caption')
+        text = text.split('\n')[0] if len(text.split('\n')) > 1 else ''
+        flag = True
+    else:
+        entities = kwargs.pop('entities', None)
+        username = kwargs.pop('username', None)
+        text = kwargs.pop('text', None)
+        user_id = kwargs.pop('user_id', None)
+
+    id = kwargs.pop('id', None)
+    ps = kwargs.pop('ps', None)
+
+    _ = memory.update({
+        'id': id,
+        'ps': ps,
+        'tags': [],
+        'entities': entities,
+        'username': username,
+        'text': text,
+        'user_id': user_id,
+        'flag': flag
+        }, doc_ids=[message_record.doc_id])
+
+
 def get_params_for_message(message_text: str, message: Message) -> Dict:
     """Метод возвращающий необходимые параметры для сообщения на основе типа сообщения.
 
@@ -167,8 +209,8 @@ def get_params_for_message(message_text: str, message: Message) -> Dict:
     'caption': message_text,
     'photo': message.json.get('photo', [{}])[0].get('file_id', None),
     'video': message.json.get('video', {}).get('file_id',None),
-    'document': message.document.file_id,
-    'animation': message.animation.file_id
+    'document': message.json.get('document', {}).get('file_id', None),
+    'animation': message.json.get('animation', {}).get('file_id', None)
     }
 
     return params_mapping(message.content_type, params)
