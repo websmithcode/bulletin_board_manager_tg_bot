@@ -46,9 +46,9 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     message_type = message.content_type
     if message.chat.type not in ('group', 'supergroup'):
         return
-    log.info('\nmethod: on_message_received\n'
+    log.info('method: on_message_received'
              'Received message: %s from %s, %s', text, name, message.from_user.id)
-    log.debug(message)
+    log.debug(f'method: on_message_received, full recieved message: {message}')
     if message_type in ('text', 'photo', 'video', 'document', 'hashtag', 'animation'):
         if text:
             text += f'\n\n[{name}](tg://user?id={message.from_user.id})'
@@ -65,24 +65,15 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
                 params['text'] = text
             elif params.get('caption', None):
                 params['caption'] = text
-            log.debug(f'params: {params}')
+            # params['entities'] = message.json.get('entities')
+            # print(params['entities'])
             await get_send_procedure(message_type, bot)(**params)
-
-    # db_messages.messages = {'message_type': message.content_type,
-    #                         'uid': str(message.chat.id) + '!' + str(message.id),
-    #                         'message_id': message.id,
-    #                         'chat_id': message.chat.id,
-    #                         'text': message.text,
-    #                         'caption': message.caption,
-    #                         'photo': message.json.get('photo', [{}])[0].get('file_id', None),
-    #                         'video': message.json.get('video', {}).get('file_id', None),
-    #                         'audio': message.audio,
-    #                         'sender_id': message.from_user.id}
-
-
+            log.info(f'method: on_message_received, called for admin_id {params["chat_id"]} with params: {params}')
 
     await bot.delete_message(message.chat.id, message.id)
+    log.info(f'method: on_message_received, message deleted')
     await send_info_message(message, bot)
+    log.info(f'method: on_message_received, info message sended')
     # сохраняем сообщение
     # удаляем сообщение
     # отправляем админам

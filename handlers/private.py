@@ -35,8 +35,9 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
         `call (CallbackQuery)`: Объект callback'а.
         `bot (AsyncTeleBot)`: Объект бота.
     """
-    log.info('\nmethod: on_post_processing\n'
+    log.info('method: on_post_processing'
              'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
+
     ps = [x['ps'] for x in db_admins.admins if x['id'] == call.message.chat.id][0]
     r = messages.insert({'id': call.message.id, 'body': call.message.json, 'ps': ps, 'tags': None})
     try:
@@ -54,18 +55,26 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
     if call.data == 'accept':
         await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id,
                                             reply_markup=get_hashtag_markup())
+        log.info('method: on_post_processing'
+                 f'message with chat_id{call.message.chat.id} and message_Id {call.message.message.id} was accepted',
+                 call.id, call.data, call.message)
 
     elif call.data == 'decline':
         if call.message.content_type == 'text':
             await bot.edit_message_text(chat_id=call.from_user.id,
                                         message_id=call.message.id,
                                         text=f'{call.message.text}\n❌ОТКЛОНЕНО❌')
+            log.info('method: on_post_processing'
+                      f'message with chat_id{call.message.chat.id} and message_Id {call.message.message.id} was decline',
+                      call.id, call.data, call.message)
         else:
             text = string_builder(**messages.get(doc_id=r))
             await bot.edit_message_caption(chat_id=call.from_user.id,
                                            message_id=call.message.id,
                                            caption=f'{text}\n❌ОТКЛОНЕНО❌')
-
+            log.info('method: on_post_processing'
+                     f'caption with chat_id{call.message.chat.id} and message_Id {call.message.message.id} was decline',
+                     call.id, call.data, call.message)
 
 async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     """Хендлер выбора хештегов новых сообщений.
@@ -74,7 +83,7 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
         `call (CallbackQuery)`: Объект callback'а.
         `bot (AsyncTeleBot)`: Объект бота.
     """
-    log.info('\nmethod: on_hashtag_choose\n'
+    log.info('method: on_hashtag_choose'
              'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
     # if (call.message.text and call.message.text[0] != '#') \
     #     or (call.message.caption and call.message.caption[0] != '#'):
@@ -100,6 +109,9 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
                                        chat_id=call.message.chat.id,
                                        message_id=call.message.id,
                                        reply_markup=get_hashtag_markup())
+        log.debug('method: on_hashtag_choose'
+                 'caption was edited, callback data from callback query id %s is \'%s\', current message: %s',
+                  call.id, call.data, call.message)
 
 
 async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
@@ -144,7 +156,7 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
                                         reply_markup='')
 
     result = messages.remove(Query().id == call.message.id)
-    log.debug(f'result: {result}')
-    log.info('\nmethod: send_message_to_group\n'
-             'message: message with id %s\n '
+    log.debug(f'method: send_message_to_group,removed resulted message from query, message: {result}')
+    log.info('method: send_message_to_group'
+             'message: message with id %s '
              'message: \'%s\' is sended', call.message.id, text)

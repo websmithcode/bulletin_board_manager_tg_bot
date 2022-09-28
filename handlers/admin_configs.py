@@ -3,6 +3,7 @@ from typing import Callable, Dict
 from tinydb.table import Document
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import Message
+from utils.logger import log
 from utils.database import AdminDatabase, TagDatabase, memory
 
 db_tags = TagDatabase()
@@ -20,6 +21,7 @@ def check_permissions(user_id: int) -> bool:
     Returns:
         `bool`: Имеет ли права пользователь.
     """
+    log.info(f'method: check_permissions, called')
     return user_id in [item['id'] for item in db_admins.admins]
 
 
@@ -37,6 +39,7 @@ async def cmd_add_hashtag(message: Message, bot: AsyncTeleBot):
         hashtags = text.split()
         for hashtag in hashtags:
             db_tags.tags = hashtag
+            log.info(f'method: cmd_add_hashtag,hashtag: {hashtag} was added')
         await bot.reply_to(message, "Хештег добавлен!")
 
 
@@ -61,6 +64,7 @@ async def cmd_add_admin(message: Message, bot: AsyncTeleBot):
                             'fullname': fullname,
                             'username': None,
                             'ps': " "}
+        log.info(f'method: cmd_add_admin, admin with id {text} was added')
     print(db_admins.admins)
 
 
@@ -76,6 +80,7 @@ async def cmd_remove_admin(message: Message, bot: AsyncTeleBot):
     else:
         text = message.text.replace('/remove_admin', '').strip().replace('@', '')
         db_admins.remove_admin(id=text)
+        log.info(f'method: cmd_remove_admin, admin with id {text} was deleted')
 
 
 async def cmd_remove_hashtag(message: Message, bot: AsyncTeleBot):
@@ -91,6 +96,7 @@ async def cmd_remove_hashtag(message: Message, bot: AsyncTeleBot):
         hashtags = message.text.replace('/remove_hashtag', '').strip().split()
         for hashtag in hashtags:
             db_tags.remove_tag(hashtag)
+            log.info(f'method: cmd_remove_hashtag, hashtag {hashtag} was deleted')
         await bot.reply_to(message, "Хештег удален!")
 
 
@@ -111,7 +117,7 @@ async def cmd_add_ps(message: Message, bot: AsyncTeleBot):
             for item in db_admins.admins:
                 if message.from_user.id == item['id']:
                     db_admins.update(item['id'], {'ps': text})
-        print(db_admins.admins)
+                    log.info(f'method: cmd_add_ps, ps updated for {item["id"]}, current ps: {item["ps"]}')
 
 
 def params_mapping(message_type: str, params: Dict) -> Dict:
@@ -136,6 +142,7 @@ def params_mapping(message_type: str, params: Dict) -> Dict:
     unwanted = set(map_list) - set(wanted)
     for key in unwanted:
         params.pop(key, None)
+    log.debug(f'method: params_mapping, params: {params}')
     return params
 
 
@@ -150,6 +157,7 @@ def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable: #pylin
         `Callable`: Метод отправки сообщения.
     """
     message_type = message_type.replace('text', 'message')
+    log.info(f'method: get_send_procedure, status: done')
     return eval(f'bot.send_{message_type}') #pylint: disable=eval-used
 
 
@@ -160,7 +168,7 @@ def string_builder(**kwargs):
     f"[{kwargs.pop('username')}](tg://user?id={kwargs.pop('user_id')})\n\n"\
     "\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_"\
     f"{kwargs.pop('ps')}"
-    
+    log.debug(f'method: string_builder, text: {text}')
     return text
 
 
@@ -193,7 +201,7 @@ def parse_and_update(message_record: Document, **kwargs):
         'user_id': user_id,
         'flag': flag
         }, doc_ids=[message_record.doc_id])
-
+    log.debug(f'method: parse_and_update, memory: {memory}')
 
 def get_params_for_message(message_text: str, message: Message) -> Dict:
     """Метод возвращающий необходимые параметры для сообщения на основе типа сообщения.
@@ -213,5 +221,5 @@ def get_params_for_message(message_text: str, message: Message) -> Dict:
     'document': message.json.get('document', {}).get('file_id', None),
     'animation': message.json.get('animation', {}).get('file_id', None)
     }
-
+    log.debug(f'method: get_params_for_message, params: {params}')
     return params_mapping(message.content_type, params)
