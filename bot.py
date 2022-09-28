@@ -1,5 +1,4 @@
-"""Точка запуска бота
-"""
+"""Точка запуска бота"""
 import os
 import asyncio
 from telebot.async_telebot import AsyncTeleBot
@@ -19,9 +18,7 @@ from handlers.admin_commands import (get_commands_markup,
                                      on_button_choose, 
                                      on_hashtag_add, 
                                      on_ps_add, 
-                                     on_hashtag_delete, 
-                                     on_list_of_hashtags, 
-                                     on_decline)
+                                     on_hashtag_delete)
 
 from telebot.asyncio_storage import StateMemoryStorage
 from telebot import asyncio_filters
@@ -33,7 +30,7 @@ bot = AsyncTeleBot(__TOKEN, parse_mode='Markdown',
 
 
 def register_handlers():
-    """Регистрация хендлеров бота"""
+    # Регистрация хендлеров бота
     # Админские хендлеры
     bot.register_message_handler(callback=cmd_remove_hashtag,
                                  pass_bot=True,
@@ -51,7 +48,7 @@ def register_handlers():
                                  commands=['add_ps'],
                                  pass_bot=True)
 
-    '''Хендлеры для команд администратора через кнопки'''
+    # Хендлеры для команд администратора через кнопки
     bot.register_message_handler(callback=get_commands_markup,
                                  commands=['start'],
                                  pass_bot=True)
@@ -67,7 +64,7 @@ def register_handlers():
     bot.register_message_handler(callback=on_ps_add,
                                  state=MyStates.on_ps_add,
                                  pass_bot=True)
-    '''-----------------------------------------------'''
+    # -----------------------------------------------
 
     # Базовые Хендлеры
     bot.register_message_handler(callback=on_message_received,

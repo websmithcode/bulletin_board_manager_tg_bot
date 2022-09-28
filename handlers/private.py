@@ -60,15 +60,15 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
                  call.id, call.data, call.message)
 
     elif call.data == 'decline':
+        text = string_builder(**messages.get(doc_id=r))
         if call.message.content_type == 'text':
             await bot.edit_message_text(chat_id=call.from_user.id,
                                         message_id=call.message.id,
-                                        text=f'{call.message.text}\n❌ОТКЛОНЕНО❌')
+                                        text=f'{call.message.text}\n❌ОТКЛОНЕНО❌',)
             log.info('method: on_post_processing'
                       f'message with chat_id{call.message.chat.id} and message_Id {call.message.message.id} was decline',
                       call.id, call.data, call.message)
         else:
-            text = string_builder(**messages.get(doc_id=r))
             await bot.edit_message_caption(chat_id=call.from_user.id,
                                            message_id=call.message.id,
                                            caption=f'{text}\n❌ОТКЛОНЕНО❌')
@@ -96,19 +96,27 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     _ = messages.update({'tags': tags },doc_ids=[r.doc_id])
     log.debug('update: {}'.format(_))
     text = string_builder(**messages.get(doc_id=r.doc_id))
+    
+    for entity in r['entities']:
+        cur = entity['offset']
+        messages.update({'entities': cur+len(call.data)},doc_ids=[r.doc_id])
+
+    r = messages.get(Query().id == call.message.id)
 
     if call.message.content_type == 'text':
         await bot.edit_message_text(text=text,
                                     chat_id=call.message.chat.id,
                                     message_id=call.message.id,
-                                    reply_markup=get_hashtag_markup())
+                                    reply_markup=get_hashtag_markup(),
+                                    entities=r['entities'])
 
     else:
         call.message.caption = '' if not call.message.caption else call.message.caption
         await bot.edit_message_caption(caption=text,
                                        chat_id=call.message.chat.id,
                                        message_id=call.message.id,
-                                       reply_markup=get_hashtag_markup())
+                                       reply_markup=get_hashtag_markup(),
+                                       caption_entities=r['entities'])
         log.debug('method: on_hashtag_choose'
                  'caption was edited, callback data from callback query id %s is \'%s\', current message: %s',
                   call.id, call.data, call.message)

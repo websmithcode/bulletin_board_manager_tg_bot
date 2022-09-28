@@ -1,5 +1,5 @@
 """Модуль различных хендлеров и вспомогательных методов."""
-from typing import Callable, Dict
+from typing import Callable, Dict, List
 from tinydb.table import Document
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import Message
@@ -166,7 +166,7 @@ def string_builder(**kwargs):
     f"\n{kwargs.pop('text')}\n\n"\
     'Если вас заинтересовало данное предложение напишите:\n'\
     f"[{kwargs.pop('username')}](tg://user?id={kwargs.pop('user_id')})\n\n"\
-    "\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_"\
+    "_______________\n"\
     f"{kwargs.pop('ps')}"
     log.debug(f'method: string_builder, text: {text}')
     return text
@@ -177,16 +177,12 @@ def parse_and_update(message_record: Document, **kwargs):
     body = kwargs.pop('body', None)
     if not kwargs.pop('flag', False):
         entities = body.get('entities', None) if body.get('entities', None) else body.get('caption_entities', None)
-        username = entities[0].get('user').get('username')
-        user_id = entities[0].get('user').get('id')
         text = body.get('text', None) if body.get('text', None) else body.get('caption')
-        text = text.split('\n')[0] if len(text.split('\n')) > 1 else ''
+        text = text.split('\n')[-1] if len(text.split('\n')) > 1 else ''
         flag = True
     else:
         entities = kwargs.pop('entities', None)
-        username = kwargs.pop('username', None)
         text = kwargs.pop('text', None)
-        user_id = kwargs.pop('user_id', None)
 
     id = kwargs.pop('id', None)
     ps = kwargs.pop('ps', None)
@@ -196,9 +192,7 @@ def parse_and_update(message_record: Document, **kwargs):
         'ps': ps,
         'tags': [],
         'entities': entities,
-        'username': username,
         'text': text,
-        'user_id': user_id,
         'flag': flag
         }, doc_ids=[message_record.doc_id])
     log.debug(f'method: parse_and_update, memory: {memory}')
@@ -223,3 +217,10 @@ def get_params_for_message(message_text: str, message: Message) -> Dict:
     }
     log.debug(f'method: get_params_for_message, params: {params}')
     return params_mapping(message.content_type, params)
+
+
+def clear_entities_list(entities: List[Dict]):
+    for entity in entities:
+        for key, value in entity.items():
+            if value is None:
+                entity.remove(key)

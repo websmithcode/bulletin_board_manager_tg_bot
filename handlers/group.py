@@ -1,6 +1,6 @@
 """Модуль групповых хендлеров"""
 import asyncio
-from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, MessageEntity
 from telebot.async_telebot import AsyncTeleBot
 from utils.logger import log
 from utils.database import AdminDatabase, UnmarkedMessages
@@ -12,7 +12,7 @@ db_messages = UnmarkedMessages()
 
 async def send_info_message(message, bot: AsyncTeleBot):
     message = await bot.send_message(message.chat.id, f'Спасибо за пост, [{message.from_user.username}](tg://user?id={message.from_user.id}), '
-                                                       'он будет опубликован после проверки администратора')
+                                                       'он будет опубликован после проверки администратора', parse_mode='Markdown')
     await asyncio.sleep(15)
     await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
 
@@ -40,7 +40,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     
     if message.from_user.is_bot:
         return 
-    
+    print(message.entities)
     name = message.from_user.username if message.from_user.username else message.from_user.full_name
     text = message.text if message.text else message.caption
     message_type = message.content_type
@@ -51,23 +51,36 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     log.debug(f'method: on_message_received, full recieved message: {message}')
     if message_type in ('text', 'photo', 'video', 'document', 'hashtag', 'animation'):
         if text:
-            text += f'\n\n[{name}](tg://user?id={message.from_user.id})'
+            new_text = text + f'\n\n{name}'
+            entity = MessageEntity(type='text_mention',
+                                   offset=len(text)+2,
+                                   length=len(name),
+                                   user=message.from_user.to_dict())
         else:
-            text = f'\n\n[{name}](tg://user?id={message.from_user.id})'
+            new_text = name
+            entity = MessageEntity(type='text_mention',
+                                   offset=0,
+                                   length=len(name),
+                                   user=message.from_user.to_dict())
 
-        params = get_params_for_message(text, message)
+        params = get_params_for_message(new_text, message)
         # log.debug(params)
         params['reply_markup'] = create_markup()
 
+        if message_type == 'text':
+            params['entities'] = message.entities + [entity] if message.entities else [entity]
+        else:
+            params['caption_entities'] = message.caption_entities + [entity] if message.caption_entities else [entity]
+        
         for admin in db_admins.admins:
             params['chat_id'] = admin.get('id')
             if params.get('text', None):
-                params['text'] = text
+                params['text'] = new_text
             elif params.get('caption', None):
-                params['caption'] = text
+                params['caption'] = new_text
             # params['entities'] = message.json.get('entities')
             # print(params['entities'])
-            await get_send_procedure(message_type, bot)(**params)
+            result = await get_send_procedure(message_type, bot)(**params)
             log.info(f'method: on_message_received, called for admin_id {params["chat_id"]} with params: {params}')
 
     await bot.delete_message(message.chat.id, message.id)
