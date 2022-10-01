@@ -1,10 +1,11 @@
 """Модуль хендлеров приватных сообщений."""
 import os
+import re
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from telebot.async_telebot import AsyncTeleBot
 from utils.logger import log
 from utils.database import TagDatabase, AdminDatabase
-from handlers.admin_configs import check_permissions, get_params_for_message, get_send_procedure, parse_and_update, string_builder
+from handlers.admin_configs import check_permissions, get_params_for_message, get_send_procedure, parse_and_update, parse_entities
 from utils.database import memory as messages
 from tinydb import Query
 db_tags = TagDatabase()
@@ -56,25 +57,29 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
         await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id,
                                             reply_markup=get_hashtag_markup())
         log.info('method: on_post_processing'
-                 f'message with chat_id{call.message.chat.id} and message_Id {call.message.message.id} was accepted',
-                 call.id, call.data, call.message)
+                 f'message with chat_id{call.message.chat.id} and message_Id {call.message.id} was accepted'
+                 f'{call.id}, {call.data}, {call.message}')
 
     elif call.data == 'decline':
-        text = string_builder(**messages.get(doc_id=r))
+        text = parse_entities(messages.get(doc_id=r)['text'], messages.get(doc_id=r)['entities'])
+        if len(messages.get(doc_id=r)['entities']) == 1:
+            text = re.escape('\n'.join(text.split('\n')[:-1])) + '\n'+text.split('\n')[-1]
         if call.message.content_type == 'text':
             await bot.edit_message_text(chat_id=call.from_user.id,
                                         message_id=call.message.id,
-                                        text=f'{call.message.text}\n❌ОТКЛОНЕНО❌',)
+                                        text=f'{text}\n❌ОТКЛОНЕНО❌',
+                                        parse_mode='MarkdownV2')
             log.info('method: on_post_processing'
-                      f'message with chat_id{call.message.chat.id} and message_Id {call.message.message.id} was decline',
-                      call.id, call.data, call.message)
+                      f'message with chat_id{call.message.chat.id} and message_Id {call.message.id} was decline'
+                      f'{call.id}, {call.data}, {call.message}')
         else:
             await bot.edit_message_caption(chat_id=call.from_user.id,
                                            message_id=call.message.id,
-                                           caption=f'{text}\n❌ОТКЛОНЕНО❌')
+                                           caption=f'{text}\n❌ОТКЛОНЕНО❌',
+                                           parse_mode='MarkdownV2')
             log.info('method: on_post_processing'
-                     f'caption with chat_id{call.message.chat.id} and message_Id {call.message.message.id} was decline',
-                     call.id, call.data, call.message)
+                     f'caption with chat_id{call.message.chat.id} and message_Id {call.message.id} was decline'
+                     f'{call.id}, {call.data}, {call.message}')
 
 async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     """Хендлер выбора хештегов новых сообщений.
@@ -89,26 +94,30 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     #     or (call.message.caption and call.message.caption[0] != '#'):
     #     call.data = call.data + '\n'
     r = messages.get(Query().id == call.message.id)
+    
     log.debug('message: {}'.format(r))
+    
     tags = r['tags']
     tags.append(call.data)
-    log.debug('tags: {}'.format(tags))
-    _ = messages.update({'tags': tags },doc_ids=[r.doc_id])
-    log.debug('update: {}'.format(_))
-    text = string_builder(**messages.get(doc_id=r.doc_id))
     
-    for entity in r['entities']:
-        cur = entity['offset']
-        messages.update({'entities': cur+len(call.data)},doc_ids=[r.doc_id])
-
-    r = messages.get(Query().id == call.message.id)
-
+    log.debug('tags: {}'.format(tags))
+    
+    
+    text = ' '.join(['\\'+tag for tag in tags])+'\n'+messages.get(doc_id=r.doc_id)['text']
+    text = parse_entities(text,
+                          messages.get(doc_id=r.doc_id)['entities'],
+                          increment=len(' '.join(['\\'+tag for tag in tags]))+1)
+    
+    _ = messages.update({'tags': tags},doc_ids=[r.doc_id])
+    
+    log.debug('update: {}'.format(_))
+    
     if call.message.content_type == 'text':
         await bot.edit_message_text(text=text,
                                     chat_id=call.message.chat.id,
                                     message_id=call.message.id,
                                     reply_markup=get_hashtag_markup(),
-                                    entities=r['entities'])
+                                    parse_mode='MarkdownV2')
 
     else:
         call.message.caption = '' if not call.message.caption else call.message.caption
@@ -116,7 +125,8 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
                                        chat_id=call.message.chat.id,
                                        message_id=call.message.id,
                                        reply_markup=get_hashtag_markup(),
-                                       caption_entities=r['entities'])
+                                       parse_mode='MarkdownV2')
+        
         log.debug('method: on_hashtag_choose'
                  'caption was edited, callback data from callback query id %s is \'%s\', current message: %s',
                   call.id, call.data, call.message)

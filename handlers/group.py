@@ -1,10 +1,11 @@
 """Модуль групповых хендлеров"""
 import asyncio
+import re
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, MessageEntity
 from telebot.async_telebot import AsyncTeleBot
 from utils.logger import log
 from utils.database import AdminDatabase, UnmarkedMessages
-from handlers.admin_configs import get_params_for_message, get_send_procedure
+from handlers.admin_configs import get_params_for_message, get_send_procedure, parse_entities
 
 db_admins = AdminDatabase()
 db_messages = UnmarkedMessages()
@@ -40,37 +41,42 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     
     if message.from_user.is_bot:
         return 
-    print(message.entities)
+    log.debug(f'method: on_message_received, full recieved message: {message}')
     name = message.from_user.username if message.from_user.username else message.from_user.full_name
     text = message.text if message.text else message.caption
+    entities = message.entities if message.entities else message.caption_entities
+    #print(f'ENTITIES: {entities}')
+    text = re.escape(text)
+    if entities:
+        entities = [x.to_dict() for x in entities]
+        #print(f'TEXT BEFORE: {text}')
+        text = parse_entities(text, entities)
+        #print(f'TEXT AFTER: {text}\n TYPE: {type(text)}')
     message_type = message.content_type
     if message.chat.type not in ('group', 'supergroup'):
         return
     log.info('method: on_message_received'
              'Received message: %s from %s, %s', text, name, message.from_user.id)
-    log.debug(f'method: on_message_received, full recieved message: {message}')
     if message_type in ('text', 'photo', 'video', 'document', 'hashtag', 'animation'):
         if text:
             new_text = text + f'\n\n{name}'
-            entity = MessageEntity(type='text_mention',
-                                   offset=len(text)+2,
-                                   length=len(name),
-                                   user=message.from_user.to_dict())
+            entity = {'type': 'text_mention',
+                      'offset': len(text)+2,
+                      'length': len(name)+1,
+                      'url': f'tg://user?id={message.from_user.id}'}
         else:
             new_text = name
-            entity = MessageEntity(type='text_mention',
-                                   offset=0,
-                                   length=len(name),
-                                   user=message.from_user.to_dict())
+            entity ={'type': 'text_mention',
+                    'offset':0,
+                    'length':len(name),
+                    'url': f'tg://user?id={message.from_user.id}'}
 
+        new_text = parse_entities(new_text, [entity])
         params = get_params_for_message(new_text, message)
         # log.debug(params)
         params['reply_markup'] = create_markup()
-
-        if message_type == 'text':
-            params['entities'] = message.entities + [entity] if message.entities else [entity]
-        else:
-            params['caption_entities'] = message.caption_entities + [entity] if message.caption_entities else [entity]
+                    
+                
         
         for admin in db_admins.admins:
             params['chat_id'] = admin.get('id')
@@ -80,7 +86,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
                 params['caption'] = new_text
             # params['entities'] = message.json.get('entities')
             # print(params['entities'])
-            result = await get_send_procedure(message_type, bot)(**params)
+            result = await get_send_procedure(message_type, bot)(**params,parse_mode='MarkdownV2')
             log.info(f'method: on_message_received, called for admin_id {params["chat_id"]} with params: {params}')
 
     await bot.delete_message(message.chat.id, message.id)

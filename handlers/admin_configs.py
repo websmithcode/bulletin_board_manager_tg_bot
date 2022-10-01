@@ -178,7 +178,7 @@ def parse_and_update(message_record: Document, **kwargs):
     if not kwargs.pop('flag', False):
         entities = body.get('entities', None) if body.get('entities', None) else body.get('caption_entities', None)
         text = body.get('text', None) if body.get('text', None) else body.get('caption')
-        text = text.split('\n')[-1] if len(text.split('\n')) > 1 else ''
+        # text = text.split('\n')[-1] if len(text.split('\n')) > 1 else ''
         flag = True
     else:
         entities = kwargs.pop('entities', None)
@@ -219,8 +219,39 @@ def get_params_for_message(message_text: str, message: Message) -> Dict:
     return params_mapping(message.content_type, params)
 
 
-def clear_entities_list(entities: List[Dict]):
+def parse_entities(text: str, entities: List[Dict], increment: int=0) -> str:
+    if not entities:
+        return text
+    entities.sort(key=lambda x: x.get('offset'))
+    counter = 0
     for entity in entities:
-        for key, value in entity.items():
-            if value is None:
-                entity.remove(key)
+        #print('___________\n'+text)
+        o = entity['offset'] + counter + increment
+        l = entity['length']
+        if entity['type'] in ('text_link', 'text_mention'):
+            if not entity.get('url', None):
+                entity['url'] = f'tg://user?id={entity["user"]["id"]}'
+            text = text[:o]+'['+text[o:o+l]+']'+f'({entity["url"]})'+text[o+l:]
+            counter += 4 + len(entity['url'])
+        elif entity['type'] == 'bold':
+            text = text[:o]+'*'+text[o:o+l]+'*'+text[o+l:]
+            counter += 2
+        elif entity['type'] == 'italic':
+            text = text[:o]+'_'+text[o:o+l]+'_'+text[o+l:]
+            counter += 2
+        elif entity['type'] == 'underline':
+            text = text[:o]+'__'+text[o:o+l]+'__'+text[o+l:]
+            counter += 4
+        elif entity['type'] == 'spoiler':
+            text = text[:o]+'||'+text[o:o+l]+'||'+text[o+l:]
+            counter += 4
+        elif entity['type'] == 'strikethrough':
+            text = text[:o]+'~'+text[o:o+l]+'~'+text[o+l:]
+            counter += 2
+        elif entity['type'] == 'pre':
+            text = text[:o]+'`'+text[o:o+l]+'`'+text[o+l:]
+            counter += 2
+        elif entity['type'] == 'code':
+            text = text[:o]+'```'+text[o:o+l]+'```'+text[o+l:]
+            counter += 6
+    return text

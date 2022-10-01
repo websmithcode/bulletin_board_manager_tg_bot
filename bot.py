@@ -25,7 +25,7 @@ from telebot import asyncio_filters
 from utils.states import MyStates
 
 __TOKEN = os.environ.get('TOKEN')
-bot = AsyncTeleBot(__TOKEN, parse_mode='Markdown',
+bot = AsyncTeleBot(__TOKEN,
                    state_storage=StateMemoryStorage())
 
 
