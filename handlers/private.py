@@ -5,7 +5,7 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQu
 from telebot.async_telebot import AsyncTeleBot
 from utils.logger import log
 from utils.database import TagDatabase, AdminDatabase
-from handlers.admin_configs import check_permissions, get_params_for_message, get_send_procedure, parse_and_update, parse_entities
+from handlers.admin_configs import check_permissions, get_params_for_message, get_send_procedure, parse_and_update, string_builder
 from utils.database import memory as messages
 from tinydb import Query
 db_tags = TagDatabase()
@@ -41,6 +41,7 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
 
     ps = [x['ps'] for x in db_admins.admins if x['id'] == call.message.chat.id][0]
     r = messages.insert({'id': call.message.id, 'body': call.message.json, 'ps': ps, 'tags': None})
+    log.debug('New message in db: %s', r)
     try:
         log.debug(f'parse and update before: {messages.get(doc_id=r)}')
         parse_and_update(messages.get(doc_id=r), **messages.get(doc_id=r))
@@ -56,22 +57,21 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
     if call.data == 'accept':
         await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id,
                                             reply_markup=get_hashtag_markup())
-        log.info('method: on_post_processing'
-                 f'message with chat_id{call.message.chat.id} and message_Id {call.message.id} was accepted'
+        log.info('method: on_post_processing '
+                 f'message with chat_id {call.message.chat.id} and message_Id {call.message.id} was accepted '
                  f'{call.id}, {call.data}, {call.message}')
 
     elif call.data == 'decline':
-        text = parse_entities(messages.get(doc_id=r)['text'], messages.get(doc_id=r)['entities'])
-        if len(messages.get(doc_id=r)['entities']) == 1:
-            text = re.escape('\n'.join(text.split('\n')[:-1])) + '\n'+text.split('\n')[-1]
+        text = messages.get(doc_id=r)['text']
         if call.message.content_type == 'text':
             await bot.edit_message_text(chat_id=call.from_user.id,
                                         message_id=call.message.id,
                                         text=f'{text}\n❌ОТКЛОНЕНО❌',
                                         parse_mode='MarkdownV2')
             log.info('method: on_post_processing'
-                      f'message with chat_id{call.message.chat.id} and message_Id {call.message.id} was decline'
-                      f'{call.id}, {call.data}, {call.message}')
+                      'message with chat_id %s and message_Id %s was decline'
+                      '%s, %s, %s',
+                      call.message.chat.id,call.message.id,call.id,call.data,call.message)
         else:
             await bot.edit_message_caption(chat_id=call.from_user.id,
                                            message_id=call.message.id,
@@ -94,25 +94,22 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     #     or (call.message.caption and call.message.caption[0] != '#'):
     #     call.data = call.data + '\n'
     r = messages.get(Query().id == call.message.id)
-    
+
     log.debug('message: {}'.format(r))
-    
-    tags = r['tags']
+
+    tags = r.get('tags', [])
     tags.append(call.data)
-    
+
     log.debug('tags: {}'.format(tags))
-    
-    
+
     text = ' '.join(['\\'+tag for tag in tags])+'\n'+messages.get(doc_id=r.doc_id)['text']
-    text = parse_entities(text,
-                          messages.get(doc_id=r.doc_id)['entities'],
-                          increment=len(' '.join(['\\'+tag for tag in tags]))+1)
     
     _ = messages.update({'tags': tags},doc_ids=[r.doc_id])
     
     log.debug('update: {}'.format(_))
     
     if call.message.content_type == 'text':
+        text = string_builder(**messages.get(Query().id == call.message.id))
         await bot.edit_message_text(text=text,
                                     chat_id=call.message.chat.id,
                                     message_id=call.message.id,
@@ -168,7 +165,7 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
 
     # log.debug(F'params: {params[text]}')
     print(params)
-    await get_send_procedure(message_type, bot)(**params)
+    await get_send_procedure(message_type, bot)(**params, parse_mode='MarkdownV2')
     await bot.edit_message_reply_markup(call.message.chat.id,
                                         message_id=call.message.message_id,
                                         reply_markup='')

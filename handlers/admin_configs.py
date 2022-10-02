@@ -1,4 +1,5 @@
 """Модуль различных хендлеров и вспомогательных методов."""
+import traceback
 from typing import Callable, Dict, List
 from tinydb.table import Document
 from telebot.async_telebot import AsyncTeleBot
@@ -162,11 +163,13 @@ def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable: #pylin
 
 
 def string_builder(**kwargs):
-    text = f"{' '.join([tag for tag in kwargs.pop('tags', [])])}\n"\
+    separator = '\_'*15
+    tags = ' '.join(['\\'+tag for tag in kwargs.pop('tags', [])])
+    text = f"{tags}\n"\
     f"\n{kwargs.pop('text')}\n\n"\
     'Если вас заинтересовало данное предложение напишите:\n'\
     f"[{kwargs.pop('username')}](tg://user?id={kwargs.pop('user_id')})\n\n"\
-    "_______________\n"\
+    f"{separator}\n"\
     f"{kwargs.pop('ps')}"
     log.debug(f'method: string_builder, text: {text}')
     return text
@@ -176,13 +179,19 @@ def string_builder(**kwargs):
 def parse_and_update(message_record: Document, **kwargs):
     body = kwargs.pop('body', None)
     if not kwargs.pop('flag', False):
-        entities = body.get('entities', None) if body.get('entities', None) else body.get('caption_entities', None)
-        text = body.get('text', None) if body.get('text', None) else body.get('caption')
-        # text = text.split('\n')[-1] if len(text.split('\n')) > 1 else ''
+        entities: List[Dict] = body.get('entities', None) if body.get('entities', None) else body.get('caption_entities', None)
+        text: str = body.get('text', None) if body.get('text', None) else body.get('caption')
+        text = '\n'.join(text.split('\n')[:-1])
+        username = entities[-1].get('user').get('username')
+        user_id = entities[-1].get('user').get('id')
+        # del entities[-1]
+        text = parse_entities(text, entities)
         flag = True
     else:
         entities = kwargs.pop('entities', None)
         text = kwargs.pop('text', None)
+        user_id = kwargs.pop('user_id', None)
+        username = kwargs.pop('username', None)
 
     id = kwargs.pop('id', None)
     ps = kwargs.pop('ps', None)
@@ -191,6 +200,8 @@ def parse_and_update(message_record: Document, **kwargs):
         'id': id,
         'ps': ps,
         'tags': [],
+        'user_id': user_id,
+        'username': username,
         'entities': entities,
         'text': text,
         'flag': flag
@@ -219,39 +230,64 @@ def get_params_for_message(message_text: str, message: Message) -> Dict:
     return params_mapping(message.content_type, params)
 
 
-def parse_entities(text: str, entities: List[Dict], increment: int=0) -> str:
-    if not entities:
+def escape(pattern):
+    _special_chars_map = {i: '\\' + chr(i) for i in b'()[]{}?*+-=!|<_>^$\\.&~#'}
+    """
+    Escape special characters in a string.
+    """
+    if isinstance(pattern, str):
+        return pattern.translate(_special_chars_map)
+    else:
+        pattern = str(pattern, 'latin1')
+        return pattern.translate(_special_chars_map).encode('latin1')
+
+
+def parse_entities(text: str, entities: List[Dict]) -> str:
+    try:
+        log.debug('parse_entities entry')
+        if not entities:
+            return text
+        entities.sort(key=lambda x: x.get('offset'))
+        counter = 0
+        emojis = []
+        
+        for i, c in enumerate(text):
+            if ord(c) > 128512:
+                emojis.append(i)
+        for entity in entities:
+            print('___________\n'+text)
+            o = entity['offset'] + counter
+            l = entity['length']
+            if any(o>e for e in emojis):
+                o-= len([e for e in emojis if o>e])
+            elif any(o+l>e>o for e in emojis):
+                l-= len([e for e in emojis if o+l>e>o])
+            if entity['type'] in ('text_link', 'text_mention'):
+                if not entity.get('url', None):
+                    entity['url'] = f'tg://user?id={entity["user"]["id"]}'
+                text = text[:o]+'['+text[o:o+l]+']'+f'({entity["url"]})'+text[o+l:]
+                counter += 4 + len(entity['url'])
+            elif entity['type'] == 'bold':
+                text = text[:o]+'*'+text[o:o+l]+'*'+text[o+l:]
+                counter += 2
+            elif entity['type'] == 'italic':
+                text = text[:o]+'_'+text[o:o+l]+'_'+text[o+l:]
+                counter += 2
+            elif entity['type'] == 'underline':
+                text = text[:o]+'__'+text[o:o+l]+'__'+text[o+l:]
+                counter += 4
+            elif entity['type'] == 'spoiler':
+                text = text[:o]+'||'+text[o:o+l]+'||'+text[o+l:]
+                counter += 4
+            elif entity['type'] == 'strikethrough':
+                text = text[:o]+'~'+text[o:o+l]+'~'+text[o+l:]
+                counter += 2
+            elif entity['type'] == 'pre':
+                text = text[:o]+'`'+text[o:o+l]+'`'+text[o+l:]
+                counter += 2
+            elif entity['type'] == 'code':
+                text = text[:o]+'```'+text[o:o+l]+'```'+text[o+l:]
+                counter += 6
         return text
-    entities.sort(key=lambda x: x.get('offset'))
-    counter = 0
-    for entity in entities:
-        #print('___________\n'+text)
-        o = entity['offset'] + counter + increment
-        l = entity['length']
-        if entity['type'] in ('text_link', 'text_mention'):
-            if not entity.get('url', None):
-                entity['url'] = f'tg://user?id={entity["user"]["id"]}'
-            text = text[:o]+'['+text[o:o+l]+']'+f'({entity["url"]})'+text[o+l:]
-            counter += 4 + len(entity['url'])
-        elif entity['type'] == 'bold':
-            text = text[:o]+'*'+text[o:o+l]+'*'+text[o+l:]
-            counter += 2
-        elif entity['type'] == 'italic':
-            text = text[:o]+'_'+text[o:o+l]+'_'+text[o+l:]
-            counter += 2
-        elif entity['type'] == 'underline':
-            text = text[:o]+'__'+text[o:o+l]+'__'+text[o+l:]
-            counter += 4
-        elif entity['type'] == 'spoiler':
-            text = text[:o]+'||'+text[o:o+l]+'||'+text[o+l:]
-            counter += 4
-        elif entity['type'] == 'strikethrough':
-            text = text[:o]+'~'+text[o:o+l]+'~'+text[o+l:]
-            counter += 2
-        elif entity['type'] == 'pre':
-            text = text[:o]+'`'+text[o:o+l]+'`'+text[o+l:]
-            counter += 2
-        elif entity['type'] == 'code':
-            text = text[:o]+'```'+text[o:o+l]+'```'+text[o+l:]
-            counter += 6
-    return text
+    except Exception as e:
+        log.error(traceback.format_exc())

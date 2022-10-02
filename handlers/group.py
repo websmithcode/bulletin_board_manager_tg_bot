@@ -5,7 +5,7 @@ from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, M
 from telebot.async_telebot import AsyncTeleBot
 from utils.logger import log
 from utils.database import AdminDatabase, UnmarkedMessages
-from handlers.admin_configs import get_params_for_message, get_send_procedure, parse_entities
+from handlers.admin_configs import get_params_for_message, get_send_procedure, parse_entities, escape
 
 db_admins = AdminDatabase()
 db_messages = UnmarkedMessages()
@@ -46,7 +46,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     text = message.text if message.text else message.caption
     entities = message.entities if message.entities else message.caption_entities
     #print(f'ENTITIES: {entities}')
-    text = re.escape(text)
+    text = escape(text)
     if entities:
         entities = [x.to_dict() for x in entities]
         #print(f'TEXT BEFORE: {text}')
