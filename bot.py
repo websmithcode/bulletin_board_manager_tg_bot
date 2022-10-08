@@ -6,7 +6,7 @@ from telebot.types import BotCommand
 from telebot.util import content_type_media
 from utils.logger import log
 from handlers.group import on_message_received
-from handlers.private import on_hashtag_choose, send_message_to_group, on_post_processing
+from handlers.private import on_hashtag_choose, send_message_to_group, on_post_processing, on_error_message_reply
 from handlers.admin_configs import (cmd_add_hashtag,
                                     cmd_add_admin,
                                     cmd_remove_admin,
@@ -47,6 +47,9 @@ def register_handlers():
     bot.register_message_handler(callback=cmd_add_ps,
                                  commands=['add_ps'],
                                  pass_bot=True)
+    # bot.register_message_handler(callback=on_error_message_reply,
+    #                              func=lambda x: x.reply_to_message,
+    #                              pass_bot=True)
 
     # Хендлеры для команд администратора через кнопки
     bot.register_message_handler(callback=get_commands_markup,
@@ -80,7 +83,7 @@ def register_handlers():
                                         pass_bot=True)
 
     bot.register_callback_query_handler(callback=on_post_processing,
-                                        func=lambda call: call.data in ('accept', 'decline'),
+                                        func=lambda call: call.data in ('accept', 'decline', 'accept_error'),
                                         pass_bot=True)
 
 

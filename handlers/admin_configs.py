@@ -3,7 +3,7 @@ import traceback
 from typing import Callable, Dict, List
 from tinydb.table import Document
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import Message
+from telebot.types import Message, MessageEntity
 from utils.logger import log
 from utils.database import AdminDatabase, TagDatabase, memory
 
@@ -184,7 +184,7 @@ def parse_and_update(message_record: Document, **kwargs):
         text = '\n'.join(text.split('\n')[:-1])
         username = entities[-1].get('user').get('username')
         user_id = entities[-1].get('user').get('id')
-        # del entities[-1]
+        del entities[-1]
         text = parse_entities(text, entities)
         flag = True
     else:
@@ -231,7 +231,7 @@ def get_params_for_message(message_text: str, message: Message) -> Dict:
 
 
 def escape(pattern):
-    _special_chars_map = {i: '\\' + chr(i) for i in b'()[]{}?*+-=!|<_>^$\\.&~#'}
+    _special_chars_map = {i: '\\' + chr(i) for i in b'()[]{}?*+-=|<_>^$\\&~#'}
     """
     Escape special characters in a string.
     """
@@ -250,7 +250,7 @@ def parse_entities(text: str, entities: List[Dict]) -> str:
         entities.sort(key=lambda x: x.get('offset'))
         counter = 0
         emojis = []
-        
+
         for i, c in enumerate(text):
             if ord(c) > 128512:
                 emojis.append(i)
@@ -291,3 +291,18 @@ def parse_entities(text: str, entities: List[Dict]) -> str:
         return text
     except Exception as e:
         log.error(traceback.format_exc())
+
+
+def entity_to_dict(self: MessageEntity):
+    return {"type": self.type,
+                "offset": self.offset,
+                "length": self.length,
+                "url": self.url,
+                "user": self.user.to_dict() if self.user else None,
+                "language":  self.language,
+                "custom_emoji_id": self.custom_emoji_id}
+
+
+def calculate_offset(increment, entities: List[MessageEntity]):
+    for entity in entities:
+        entity.offset += increment
