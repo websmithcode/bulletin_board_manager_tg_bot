@@ -2,7 +2,6 @@
 import os
 import asyncio
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import BotCommand
 from telebot.util import content_type_media
 from utils.logger import log
 from handlers.group import on_message_received
@@ -14,10 +13,10 @@ from handlers.admin_configs import (cmd_add_hashtag,
                                     cmd_add_ps)
 
 
-from handlers.admin_commands import (get_commands_markup, 
-                                     on_button_choose, 
-                                     on_hashtag_add, 
-                                     on_ps_add, 
+from handlers.admin_commands import (get_commands_markup,
+                                     on_button_choose,
+                                     on_hashtag_add,
+                                     on_ps_add,
                                      on_hashtag_delete)
 
 from telebot.asyncio_storage import StateMemoryStorage

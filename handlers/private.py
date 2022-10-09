@@ -147,6 +147,7 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     else:
         call.message.caption = '' if not call.message.caption else call.message.caption
         text, entities = string_builder(**messages.get(Query().id == call.message.id))
+        entities = calculate_offset(len(tags[-1])+1, entities)
         await bot.edit_message_caption(caption=text,
                                        chat_id=call.message.chat.id,
                                        message_id=call.message.id,
