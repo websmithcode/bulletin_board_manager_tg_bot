@@ -9,7 +9,8 @@ from handlers.admin_configs import (check_permissions,
                                     get_params_for_message,
                                     get_send_procedure,
                                     parse_and_update,
-                                    string_builder)
+                                    string_builder,
+                                    calculate_offset)
 
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
@@ -135,6 +136,7 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
         #      string_builder
         log.info(f'\nBEFORE STRING BUILDER: {messages.get(Query().id == call.message.id)}')
         text, entities = string_builder(**messages.get(Query().id == call.message.id))
+        entities = calculate_offset(len(tags[-1])+1, entities)
         print("ГАВНИЩЕ: ", entities, type(entities))
         await bot.edit_message_text(text=text,
                                     chat_id=call.message.chat.id,

@@ -182,7 +182,6 @@ def string_builder(**kwargs):
             'length': len(kwargs.get('username')),
             'user': kwargs.pop('user')
         }
-        entities = calculate_offset(len(kwargs.get('tags', [''])[-1])+1, entities)
         ent = MessageEntity.de_json(json.dumps(ent))
         entities.append(ent)
         print('ГАВНИЩЕ')
