@@ -1,5 +1,6 @@
 """Модуль хендлеров приватных сообщений."""
 import os
+import advertools as adv
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
 from telebot.async_telebot import AsyncTeleBot
 from tinydb import Query

@@ -171,9 +171,13 @@ def string_builder(**kwargs):
         f"\n{kwargs.get('text')}\n\n"\
         'Если вас заинтересовало данное предложение напишите:\n'\
         f"{kwargs.get('username')}\n\n"
+        count = adv.extract_emoji(text)['overview']['num_emoji'] # Это просто пиздец
+        for emoji in adv.extract_emoji(text)['emoji_flat']:
+            if len(f"{ord(emoji):X}") == 4:
+                count -= 1
         ent = {
             'type': 'text_mention',
-            'offset': len(text)-len(kwargs.get('username'))-2,
+            'offset': len(text)-len(kwargs.get('username'))-2+count,
             'length': len(kwargs.get('username')),
             'user': kwargs.pop('user')
         }
