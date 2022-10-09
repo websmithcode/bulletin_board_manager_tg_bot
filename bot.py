@@ -1,5 +1,4 @@
-"""Точка запуска бота
-"""
+"""Точка запуска бота"""
 import os
 import asyncio
 from telebot.async_telebot import AsyncTeleBot
@@ -19,21 +18,19 @@ from handlers.admin_commands import (get_commands_markup,
                                      on_button_choose, 
                                      on_hashtag_add, 
                                      on_ps_add, 
-                                     on_hashtag_delete, 
-                                     on_list_of_hashtags, 
-                                     on_decline)
+                                     on_hashtag_delete)
 
 from telebot.asyncio_storage import StateMemoryStorage
 from telebot import asyncio_filters
 from utils.states import MyStates
 
 __TOKEN = os.environ.get('TOKEN')
-bot = AsyncTeleBot(__TOKEN, parse_mode='Markdown',
+bot = AsyncTeleBot(__TOKEN,
                    state_storage=StateMemoryStorage())
 
 
 def register_handlers():
-    """Регистрация хендлеров бота"""
+    # Регистрация хендлеров бота
     # Админские хендлеры
     bot.register_message_handler(callback=cmd_remove_hashtag,
                                  pass_bot=True,
@@ -50,8 +47,11 @@ def register_handlers():
     bot.register_message_handler(callback=cmd_add_ps,
                                  commands=['add_ps'],
                                  pass_bot=True)
+    # bot.register_message_handler(callback=on_error_message_reply,
+    #                              func=lambda x: x.reply_to_message,
+    #                              pass_bot=True)
 
-    '''Хендлеры для команд администратора через кнопки'''
+    # Хендлеры для команд администратора через кнопки
     bot.register_message_handler(callback=get_commands_markup,
                                  commands=['start'],
                                  pass_bot=True)
@@ -67,7 +67,7 @@ def register_handlers():
     bot.register_message_handler(callback=on_ps_add,
                                  state=MyStates.on_ps_add,
                                  pass_bot=True)
-    '''-----------------------------------------------'''
+    # -----------------------------------------------
 
     # Базовые Хендлеры
     bot.register_message_handler(callback=on_message_received,
@@ -83,7 +83,7 @@ def register_handlers():
                                         pass_bot=True)
 
     bot.register_callback_query_handler(callback=on_post_processing,
-                                        func=lambda call: call.data in ('accept', 'decline'),
+                                        func=lambda call: call.data in ('accept', 'decline', 'accept_error'),
                                         pass_bot=True)
 
 
