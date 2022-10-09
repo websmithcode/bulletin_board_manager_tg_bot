@@ -1,6 +1,7 @@
 """Модуль различных хендлеров и вспомогательных методов."""
 import traceback
 import json
+import advertools as adv
 from typing import Callable, Dict, List
 from tinydb.table import Document
 from telebot.async_telebot import AsyncTeleBot
