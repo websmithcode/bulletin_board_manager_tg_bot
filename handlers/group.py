@@ -110,7 +110,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
                 params['text'] = new_text
                 params['entities'] = entities + [entity]
             elif params.get('caption', None):
-                params['caption'] = entities + [entity]
+                params['caption_entities'] = entities + [entity]
             # params['entities'] = message.json.get('entities')
             # print(params['entities'])
             try:

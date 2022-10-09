@@ -1,4 +1,5 @@
 """Модуль хендлеров приватных сообщений."""
+import os
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
 from telebot.async_telebot import AsyncTeleBot
 from tinydb import Query
@@ -143,11 +144,12 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
 
     else:
         call.message.caption = '' if not call.message.caption else call.message.caption
+        text, entities = string_builder(**messages.get(Query().id == call.message.id))
         await bot.edit_message_caption(caption=text,
                                        chat_id=call.message.chat.id,
                                        message_id=call.message.id,
                                        reply_markup=get_hashtag_markup(),
-                                       entities=entities)
+                                       caption_entities=entities)
 
     log.info('method: on_hashtag_choose'
                 'caption was edited, callback data from callback query'

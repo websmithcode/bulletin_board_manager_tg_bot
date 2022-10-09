@@ -166,7 +166,7 @@ def string_builder(**kwargs):
         entities = kwargs.pop('entities', [])
         print('ENTITIES: ', entities)
         separator = '_'*15
-        tags = ' '.join(list(kwargs.pop('tags', [])))
+        tags = ' '.join(list(kwargs.get('tags', [''])))
         text = f"{tags}\n"\
         f"\n{kwargs.get('text')}\n\n"\
         'Если вас заинтересовало данное предложение напишите:\n'\
@@ -177,7 +177,7 @@ def string_builder(**kwargs):
             'length': len(kwargs.get('username')),
             'user': kwargs.pop('user')
         }
-        entities = calculate_offset(len(tags)+1, entities.copy())
+        entities = calculate_offset(len(kwargs.get('tags', [''])[-1])+1, entities)
         ent = MessageEntity.de_json(json.dumps(ent))
         entities.append(ent)
         print('ГАВНИЩЕ')
@@ -325,5 +325,5 @@ def entity_to_dict(self: MessageEntity):
 def calculate_offset(increment, entities: List[MessageEntity]):
     for entity in entities:
         entity.offset += increment
-    print('CALCULATE_OFFSET RETURN: ', entities)
+    log.info(f'CALCULATE_OFFSET RETURN: {entities}')
     return entities
