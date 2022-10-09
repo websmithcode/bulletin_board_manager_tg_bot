@@ -13,6 +13,9 @@ db_admins = AdminDatabase()
 db_messages = UnmarkedMessages()
 
 
+MessageEntity.to_dict = entity_to_dict
+
+
 async def send_info_message(msg, bot: AsyncTeleBot):
     msg = await bot.send_message(msg.chat.id,
                                 'Спасибо за пост, '
@@ -58,10 +61,10 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
                 else message.json.get('caption_entities')) or []
     entities = [MessageEntity.de_json(json.dumps(x)) for x in entities] or []
     message_type = message.content_type
-    #print(f'ENTITIES: {entities}')
+    # print(f'ENTITIES: {entities}')
     log.info('method: on_message_received'
              'Received message: %s from %s, %s', text, name, message.from_user.id)
-    log.debug('method: on_message_received, full recieved message: %s',message)
+    log.info('method: on_message_received, full recieved message: %s',message.json)
 
     # if entities:
     #     entities = [x.to_dict() for x in entities]
@@ -74,6 +77,9 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
         if text:
             new_text = text + f'\n\n{name}'
             count = adv.extract_emoji(text)['overview']['num_emoji'] # Это просто пиздец
+            for emoji in adv.extract_emoji(text)['emoji_flat']:
+                if len(f"{ord(emoji):X}") == 4:
+                    count -= 1
             print(f'EMOTICONS COUNT:{count}')
             entity = {'type': 'text_mention',
                       'offset': len(new_text)-len(name)+count,
@@ -82,7 +88,6 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
                       'user': message.from_user.to_dict()
                     }
             entity = MessageEntity.de_json(json.dumps(entity))
-            MessageEntity.to_dict = entity_to_dict
             print(entity.user, message.json.get('from'))
         else:
             new_text = name
@@ -94,7 +99,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
 
         # new_text = parse_entities(new_text, [entity])
         params = get_params_for_message(new_text, message)
-        # log.debug(params)
+        # log.info(params)
         params['reply_markup'] = create_markup()
 
 

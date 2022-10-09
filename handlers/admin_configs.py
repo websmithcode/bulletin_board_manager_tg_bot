@@ -1,5 +1,6 @@
 """Модуль различных хендлеров и вспомогательных методов."""
 import traceback
+import json
 from typing import Callable, Dict, List
 from tinydb.table import Document
 from telebot.async_telebot import AsyncTeleBot
@@ -9,8 +10,6 @@ from utils.database import AdminDatabase, TagDatabase, memory
 
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
-
-
 
 
 def check_permissions(user_id: int) -> bool:
@@ -65,7 +64,7 @@ async def cmd_add_admin(message: Message, bot: AsyncTeleBot):
                             'fullname': fullname,
                             'username': None,
                             'ps': " "}
-        log.info(f'method: cmd_add_admin, admin with id {text} was added')
+        log.info(f'method: cmd_add_admin, admin with id {message.text} was added')
     print(db_admins.admins)
 
 
@@ -143,7 +142,7 @@ def params_mapping(message_type: str, params: Dict) -> Dict:
     unwanted = set(map_list) - set(wanted)
     for key in unwanted:
         params.pop(key, None)
-    log.debug(f'method: params_mapping, params: {params}')
+    log.info(f'method: params_mapping, params: {params}')
     return params
 
 
@@ -163,16 +162,32 @@ def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable: #pylin
 
 
 def string_builder(**kwargs):
-    separator = '\_'*15
-    tags = ' '.join(['\\'+tag for tag in kwargs.pop('tags', [])])
-    text = f"{tags}\n"\
-    f"\n{kwargs.pop('text')}\n\n"\
-    'Если вас заинтересовало данное предложение напишите:\n'\
-    f"[{kwargs.pop('username')}](tg://user?id={kwargs.pop('user_id')})\n\n"\
-    f"{separator}\n"\
-    f"{kwargs.pop('ps')}"
-    log.debug(f'method: string_builder, text: {text}')
-    return text
+    try:
+        entities = kwargs.pop('entities', [])
+        print('ENTITIES: ', entities)
+        separator = '_'*15
+        tags = ' '.join(list(kwargs.pop('tags', [])))
+        text = f"{tags}\n"\
+        f"\n{kwargs.get('text')}\n\n"\
+        'Если вас заинтересовало данное предложение напишите:\n'\
+        f"{kwargs.get('username')}\n\n"
+        ent = {
+            'type': 'text_mention',
+            'offset': len(text)-len(kwargs.get('username'))-2,
+            'length': len(kwargs.get('username')),
+            'user': kwargs.pop('user')
+        }
+        entities = calculate_offset(len(tags)+1, entities.copy())
+        ent = MessageEntity.de_json(json.dumps(ent))
+        entities.append(ent)
+        print('ГАВНИЩЕ')
+        text += f"{separator}\n"\
+            f"{kwargs.pop('ps')}"
+        log.info(f'method: string_builder, text: {text}')
+
+        return text, entities
+    except Exception as ex:
+        log.error(traceback.format_exc())
 
 
 
@@ -184,8 +199,11 @@ def parse_and_update(message_record: Document, **kwargs):
         text = '\n'.join(text.split('\n')[:-1])
         username = entities[-1].get('user').get('username')
         user_id = entities[-1].get('user').get('id')
+        user = entities[-1].get('user')
         del entities[-1]
-        text = parse_entities(text, entities)
+        for i,e in enumerate(entities):
+            entities[i] = MessageEntity.de_json(json.dumps(e))
+        # text = parse_entities(text, entities)
         flag = True
     else:
         entities = kwargs.pop('entities', None)
@@ -204,9 +222,10 @@ def parse_and_update(message_record: Document, **kwargs):
         'username': username,
         'entities': entities,
         'text': text,
-        'flag': flag
+        'flag': flag,
+        'user': user,
         }, doc_ids=[message_record.doc_id])
-    log.debug(f'method: parse_and_update, memory: {memory}')
+    log.info(f'method: parse_and_update, memory: {memory}')
 
 def get_params_for_message(message_text: str, message: Message) -> Dict:
     """Метод возвращающий необходимые параметры для сообщения на основе типа сообщения.
@@ -226,7 +245,7 @@ def get_params_for_message(message_text: str, message: Message) -> Dict:
     'document': message.json.get('document', {}).get('file_id', None),
     'animation': message.json.get('animation', {}).get('file_id', None)
     }
-    log.debug(f'method: get_params_for_message, params: {params}')
+    log.info(f'method: get_params_for_message, params: {params}')
     return params_mapping(message.content_type, params)
 
 
@@ -244,7 +263,7 @@ def escape(pattern):
 
 def parse_entities(text: str, entities: List[Dict]) -> str:
     try:
-        log.debug('parse_entities entry')
+        log.info('parse_entities entry')
         if not entities:
             return text
         entities.sort(key=lambda x: x.get('offset'))
@@ -306,3 +325,5 @@ def entity_to_dict(self: MessageEntity):
 def calculate_offset(increment, entities: List[MessageEntity]):
     for entity in entities:
         entity.offset += increment
+    print('CALCULATE_OFFSET RETURN: ', entities)
+    return entities
