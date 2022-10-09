@@ -19,7 +19,7 @@ class AdminDatabase():
         Returns:
             List[Dict]: Список документов администраторов.
         """
-        log.debug('Вызван список администраторов!')
+        log.info('Вызван список администраторов!')
         return self.__db.all()
 
 
@@ -67,7 +67,7 @@ class TagDatabase():
         Returns:
             `List[Dict]`: Список документов тегов.
         """
-        log.debug('Вызван список тегов!')
+        log.info('Вызван список тегов!')
         return self.__db.all()
 
 
