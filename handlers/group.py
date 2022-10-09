@@ -89,7 +89,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
             entity ={'type': 'text_mention',
                     'offset':0,
                     'length':len(name),
-                    'user': message.json.get('from')}
+                    'user': message.from_user.to_dict()}
             entity = MessageEntity.de_json(json.dumps(entity))
 
         # new_text = parse_entities(new_text, [entity])

@@ -6,7 +6,7 @@ from telebot.types import BotCommand
 from telebot.util import content_type_media
 from utils.logger import log
 from handlers.group import on_message_received
-from handlers.private import on_hashtag_choose, send_message_to_group, on_post_processing, on_error_message_reply
+from handlers.private import on_hashtag_choose, send_message_to_group, on_post_processing
 from handlers.admin_configs import (cmd_add_hashtag,
                                     cmd_add_admin,
                                     cmd_remove_admin,
