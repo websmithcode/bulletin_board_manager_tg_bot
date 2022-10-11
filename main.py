@@ -1,13 +1,9 @@
-import configparser
-
-from bot import Bot
-
-config = configparser.ConfigParser()
-config.read('config.ini')
-bot = Bot(config['Telegram'])
+"""Main run script"""
+from config import bot, config
 
 
 def main():
+    """ Run bot """
     bot.start_polling()
 
 
