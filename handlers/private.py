@@ -57,25 +57,33 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
         `call (CallbackQuery)`: Объект callback'а.
         `bot (AsyncTeleBot)`: Объект бота.
     """
+
+    # Проверка на наличие пользователя в списке администраторов
+    if not check_permissions(call.from_user.id):
+        return
+
     log.info('method: on_post_processing'
              'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
     admin_user = db_admins.get_admin_by_id(call.from_user.id)
     sign = admin_user.get('sign', '')
 
-    r = messages.insert(
-        {'id': call.message.id, 'body': call.message.json, 'sign': sign, 'tags': None})
-    log.info('New message in db: %s', r)
-    try:
-        log.info('parse and update before: %s', messages.get(doc_id=r))
-        parse_and_update(messages.get(doc_id=r), **messages.get(doc_id=r))
-        log.info('parse and update after: %s', messages.get(doc_id=r))
-    except Exception as ex:  # pylint: disable=broad-except
-        log.error(ex)
+    message = call.message
+    html_text = message.html_text if message.content_type == 'text' else message.html_caption
 
-    log.info(call.message.json)
-    # Проверка на наличие пользователя в списке администраторов
-    if not check_permissions(call.from_user.id):
-        return
+    message_body = {
+        **message.json,
+        'html_text': html_text,
+    }
+    message_data = {
+        'id': call.message.id,
+        'body': message_body,
+        'sign': sign,
+        'tags': None,
+        'from_user': call.from_user
+    }
+    message_id = messages.insert(message_data)
+    log.info('New message in db: %s', message_id)
+
     # log.info(call)
     if call.data == 'accept':
         await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id,
@@ -86,10 +94,9 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
                  call.message.chat.id, call.message.id, call.id, call.data, call.message)
 
     elif call.data == 'decline':
-        # TODO: recalculate offsets
         #      string builder
         text, entities = string_builder(
-            **messages.get(Query().id == call.message.id))
+            messages.get(Query().id == call.message.id))
         if call.message.content_type == 'text':
             await bot.edit_message_text(chat_id=call.from_user.id,
                                         message_id=call.message.id,
@@ -138,10 +145,10 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     if call.message.content_type == 'text':
         # TODO: recalculate offsets
         #      string_builder
+        message = messages.get(Query().id == call.message.id)
         log.info(
-            f'\nBEFORE STRING BUILDER: {messages.get(Query().id == call.message.id)}')
-        text, entities = string_builder(
-            **messages.get(Query().id == call.message.id))
+            f'\nBEFORE STRING BUILDER: {message}')
+        text, entities = string_builder(message)
         entities = calculate_offset(len(tags[-1])+1, entities)
         print("ГАВНИЩЕ: ", entities, type(entities))
         await bot.edit_message_text(text=text,
@@ -152,8 +159,7 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
 
     else:
         call.message.caption = '' if not call.message.caption else call.message.caption
-        text, entities = string_builder(
-            **messages.get(Query().id == call.message.id))
+        text, entities = string_builder(message)
         entities = calculate_offset(len(tags[-1])+1, entities)
         await bot.edit_message_caption(caption=text,
                                        chat_id=call.message.chat.id,
@@ -174,41 +180,18 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
         `call (CallbackQuery)`: Объект callback'а.
         `bot (AsyncTeleBot)`: Объект бота.
     """
-    # text = call.message.text if call.message.text else call.message.caption
     log.info('call message from user: %s', call.from_user.username)
-    # if text is None:
-    #     text = ''
-    # for m in messages.all():
-    #     if m.get("body").get("entities", None):
-    #         if m.get('id', None) == call.message.id:
-    #             print(m)
-    #             username = m.get("body")["entities"][0]["user"]["username"]
-    #             user_id = m.get("body")["entities"][0]["user"]["id"]
-    #             text = text.replace(f'{username}',
-    #                                 f'[{username}](tg://user?id={user_id})\n')
-    #     else:
-    #         if m.get('id', None) == call.message.id:
-    #             print(m)
-    #             username = m.get("body")["caption_entities"][0]["user"]["username"]
-    #             user_id = m.get("body")["caption_entities"][0]["user"]["id"]
-    #             text = text.replace(f'{username}',
-    #                                 f'[{username}](tg://user?id={user_id})\n')
     message_type = call.message.content_type
-    # TODO: recalculate offsets
-    #      string_builder
-    text, entities = string_builder(
-        **messages.get(Query().id == call.message.id))
 
-    params = get_params_for_message(text, call.message)
+    message = messages.get(Query().id == call.message.id)
+    text_html = string_builder(message)
+
+    params = get_params_for_message(text_html, call.message)
     params['chat_id'] = bot.config['CHAT_ID']
+
     if message_type == 'text':
         params['disable_web_page_preview'] = True
-        params['entities'] = entities
-    else:
-        params['caption_entities'] = entities
 
-    # log.info(F'params: {params[text]}')
-    print(params)
     await get_send_procedure(message_type, bot)(**params)
     await bot.edit_message_reply_markup(call.message.chat.id,
                                         message_id=call.message.message_id,
@@ -219,4 +202,4 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
              result)
     log.info('method: send_message_to_group'
              'message: message with id %s '
-             'message: \'%s\' is sended', call.message.id, text)
+             'message: \'%s\' is sended', call.message.id, text_html)

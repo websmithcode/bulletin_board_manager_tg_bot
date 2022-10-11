@@ -1,4 +1,4 @@
-from telebot.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
+from telebot.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from telebot.async_telebot import AsyncTeleBot
 from utils.logger import log
 from utils.database import TagDatabase, AdminDatabase
@@ -59,10 +59,10 @@ async def on_button_choose(message: Message, bot: AsyncTeleBot):
 
 
 async def on_decline(message: Message, bot: AsyncTeleBot):
-    log.info('\nОтмена произведена')
     """
     Cancel state
     """
+    log.info('\nОтмена произведена')
     await bot.send_message(message.chat.id, 'Действие отменено', reply_markup=create_commands_markup())
     await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
 

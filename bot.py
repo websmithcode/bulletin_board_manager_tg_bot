@@ -26,7 +26,7 @@ class Bot(AsyncTeleBot):
 
     def __init__(self, config, **kwargs):
         self.config = config
-        super().__init__(self.config['TOKEN'], **kwargs)
+        super().__init__(self.config['TOKEN'], **kwargs, parse_mode='HTML')
         self.commands = [
             # Admin handlers
             {

@@ -1,11 +1,10 @@
 """Модуль различных хендлеров и вспомогательных методов."""
 import traceback
-import json
-import advertools as adv
+import re
 from typing import Callable, Dict, List
 from tinydb.table import Document
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import Message, MessageEntity
+from telebot.types import Message, MessageEntity, User
 from utils.logger import log
 from utils.database import AdminDatabase, TagDatabase, memory
 
@@ -168,35 +167,30 @@ def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable:  # pyl
     return eval(f'bot.send_{message_type}')  # pylint: disable=eval-used
 
 
-def string_builder(**kwargs):
+def string_builder(message: Document):
     try:
-        entities = kwargs.pop('entities', [])
-        print('ENTITIES: ', entities)
+        user: User = message.get('from_user')
         separator = '_'*15
-        tags = ' '.join(list(kwargs.get('tags', [''])))
-        text = f"{tags}\n"\
-            f"\n{kwargs.get('text')}\n\n"\
-            'Если вас заинтересовало данное предложение напишите:\n'\
-            f"{kwargs.get('username')}\n\n"
-        count = adv.extract_emoji(
-            text)['overview']['num_emoji']  # Это просто пиздец
-        for emoji in adv.extract_emoji(text)['emoji_flat']:
-            if len(f"{ord(emoji):X}") == 4:
-                count -= 1
-        ent = {
-            'type': 'text_mention',
-            'offset': len(text)-len(kwargs.get('username'))-2+count,
-            'length': len(kwargs.get('username')),
-            'user': kwargs.pop('user')
-        }
-        ent = MessageEntity.de_json(json.dumps(ent))
-        entities.append(ent)
-        print('ГАВНИЩЕ')
-        text += f"{separator}\n"\
-            f"{kwargs.pop('sign')}"
-        log.info(f'method: string_builder, text: {text}')
+        tags = ' '.join(list(message.get('tags') or []))
+        user_link_html = f'<a href="tg://user?id={user.id}">{user.username}</a>'
+        message_body = message.get('body')
+        message_html_text = message_body.get('html_text')
 
-        return text, entities
+        # remove all after \n\n===== META =====
+        message_html_text = message_html_text.split('\n\n===== META =====')[0]
+
+        text_html = f"{tags}\n"\
+            f"\n{message_html_text}\n\n"\
+            'Если вас заинтересовало данное предложение напишите:\n'\
+            f"{user_link_html}\n\n"
+
+        if message.get('sign', None):
+            text_html += f"{separator}\n"\
+                f"{message.get('sign')}\n"
+
+        log.info(f'method: string_builder, text: {text_html}')
+
+        return text_html
     except Exception:
         log.error(traceback.format_exc())
 
@@ -204,38 +198,27 @@ def string_builder(**kwargs):
 def parse_and_update(message_record: Document, **kwargs):
     body = kwargs.pop('body', None)
     if not kwargs.pop('flag', False):
-        entities: List[Dict] = body.get('entities', None) if body.get(
-            'entities', None) else body.get('caption_entities', None)
-        text: str = body.get('text', None) if body.get(
+        html_text: str = body.get('text', None) if body.get(
             'text', None) else body.get('caption')
-        text = '\n'.join(text.split('\n')[:-1])
-        username = entities[-1].get('user').get('username')
-        user_id = entities[-1].get('user').get('id')
-        user = entities[-1].get('user')
-        del entities[-1]
-        for i, e in enumerate(entities):
-            entities[i] = MessageEntity.de_json(json.dumps(e))
-        # text = parse_entities(text, entities)
+        html_text = '\n'.join(html_text.split('\n')[:-1])
         flag = True
     else:
-        entities = kwargs.pop('entities', None)
-        text = kwargs.pop('text', None)
-        user_id = kwargs.pop('user_id', None)
-        username = kwargs.pop('username', None)
-
-    id = kwargs.pop('id', None)
+        html_text = kwargs.pop('html_text', None)
+    log.info(f'method: parse_and_update, KWARGS: {kwargs}')
+    # user_id =
+    # username =
+    message_id = kwargs.pop('id', None)
     sign = kwargs.pop('sign', None)
 
     _ = memory.update({
-        'user_id': id,
+        'id': message_id,
         'sign': sign,
         'tags': [],
         'user_id': user_id,
         'username': username,
-        'entities': entities,
-        'text': text,
+        'html_text': html_text,
         'flag': flag,
-        'user': user,
+        'user': username
     }, doc_ids=[message_record.doc_id])
     log.info(f'method: parse_and_update, memory: {memory}')
 
