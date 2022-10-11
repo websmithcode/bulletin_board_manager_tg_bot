@@ -84,7 +84,7 @@ class TagDatabase():
         log.info('Тег удален! Id: %s.', str(_))
 
 
-umassage = Query()
+unmarked_massage = Query()
 
 
 class UnmarkedMessages():
@@ -120,12 +120,12 @@ class UnmarkedMessages():
 
     def remove_message(self, uid: str):
         """Метод позволяющий удалять сообщений из базы."""
-        _ = self.__db.remove_message(umassage.uid == uid)
+        _ = self.__db.remove_message(unmarked_massage.uid == uid)
         log.info('Сообщение удалено! Id: %s.', _)
 
     def next_state(self, uid: str):
         """Метод позволяющий перейти к следующему состоянию сообщения."""
-        cur_state = self.__db.search(umassage.uid == uid)['start']
+        cur_state = self.__db.search(unmarked_massage.uid == uid)['start']
         if cur_state == 'DONE':
             log.warning('Сообщение уже в финальном статусе! Удаляю…')
             self.remove_message(uid)
@@ -133,7 +133,7 @@ class UnmarkedMessages():
             new_state = self.states[self.states.index('cur_state')+1]
             self.__db.update({
                 'state': new_state
-            }, umassage.uid == uid)
+            }, unmarked_massage.uid == uid)
             log.info('Состояние изменено! Новое состояние: {new_state}')
 
     def set_state(self, uid: str, state: str):
@@ -145,4 +145,4 @@ class UnmarkedMessages():
 
         self.__db.update({
             'state': state
-        }, umassage.uid == uid)
+        }, unmarked_massage.uid == uid)
