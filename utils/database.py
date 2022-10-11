@@ -1,11 +1,17 @@
 """Модуль предназначенный для работы с базой данных"""
+from pathlib import Path
 from typing import Dict, List
+
+from tinydb import Query, TinyDB
 from tinydb.storages import MemoryStorage
-from tinydb import TinyDB, Query
+
 from utils.logger import log
 
 admin = Query()
 memory = TinyDB(storage=MemoryStorage)
+
+# Create db directory and database files if not exists
+Path("db").mkdir(parents=True, exist_ok=True)
 
 
 class AdminDatabase():
@@ -27,10 +33,16 @@ class AdminDatabase():
     @admins.setter
     def admins(self, value: Dict):
         """Сеттер поля администраторов, позволяющий добавлять документы в базу."""
-        _ = self.__db.insert({'id': value.pop('id'),
-                              'username': value.pop('username'),
-                              'fullname': value.pop('fullname'),
-                              'ps': value.pop('ps', None)})
+        self.add_admin(**value)
+
+    def add_admin(self, username: str, fullname: str, user_id: int, sign: str):
+        """Метод позволяющий добавлять администраторов в базу."""
+        _ = self.__db.insert({
+            'id': int(user_id),
+            'username': username,
+            'fullname': fullname,
+            'sign': sign
+        })
         log.info('Запись администратора успешно добавлена! Id: %s.', str(_))
 
     def update(self, admin_id: int, query: Dict):
@@ -49,8 +61,19 @@ class AdminDatabase():
         elif kwargs.get('fullname'):
             _ = self.__db.remove(admin.fullname == kwargs.get('fullname'))
         elif kwargs.get('id'):
-            _ = self.__db.remove(admin.id == kwargs.get('id'))
+            _ = self.__db.remove(admin.id == int(kwargs.get('id')))
         log.info('Администратор удален! Id: %s.', str(_))
+
+    def get_admin_by_id(self, admin_id: int) -> Dict:
+        """Метод позволяющий получить администратора по его ID.
+
+        Args:
+            `id (int)`: ID администратора.
+
+        Returns:
+            Dict: Документ администратора.
+        """
+        return self.__db.get(admin.id == admin_id)
 
 
 tag = Query()

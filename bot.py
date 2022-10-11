@@ -11,13 +11,13 @@ from handlers.admin_configs import (cmd_add_hashtag,
                                     cmd_add_admin,
                                     cmd_remove_admin,
                                     cmd_remove_hashtag,
-                                    cmd_add_ps)
+                                    cmd_add_sign)
 
 
 from handlers.admin_commands import (get_commands_markup,
                                      on_button_choose,
                                      on_hashtag_add,
-                                     on_ps_add,
+                                     on_sign_add,
                                      on_hashtag_delete)
 
 
@@ -46,8 +46,8 @@ class Bot(AsyncTeleBot):
                 'commands': ['add_hashtag'],
             },
             {
-                'callback': cmd_add_ps,
-                'commands': ['add_ps'],
+                'callback': cmd_add_sign,
+                'commands': ['add_sign'],
             },
             # Admin button handlers
             {
@@ -67,8 +67,8 @@ class Bot(AsyncTeleBot):
                 'state': MyStates.on_hashtag_delete,
             },
             {
-                'callback': on_ps_add,
-                'state': MyStates.on_ps_add,
+                'callback': on_sign_add,
+                'state': MyStates.on_sign_add,
             },
             # Basic handlers
             {
@@ -121,6 +121,7 @@ class Bot(AsyncTeleBot):
         Cycle through self.commands list and register each command"""
         for command in self.commands:
             self.register_message_handler(pass_bot=True, **command)
+        log.info("Commands registered")
 
     def register_queries(self):
         """ Register bot queries
@@ -128,6 +129,7 @@ class Bot(AsyncTeleBot):
         Cycle through self.queries list and register each query"""
         for query in self.queries:
             self.register_callback_query_handler(pass_bot=True, **query)
+        log.info("Queries registered")
 
     def add_filters(self):
         """ Bot class module
@@ -137,18 +139,14 @@ class Bot(AsyncTeleBot):
 
         self.add_custom_filter(asyncio_filters.StateFilter(self))
         self.add_custom_filter(asyncio_filters.IsDigitFilter())
+        log.info("Filters added")
 
     def start_polling(self):
         """ Start polling
 
         Start polling and run event loop
         """
-        log.info('Bot started')
-        self.polling(none_stop=True)
-        loop = asyncio.get_event_loop()
-        loop.run_forever()
         log.info("Starting polling...")
-
         asyncio.run(self.polling(
             non_stop=True,
             skip_pending=True

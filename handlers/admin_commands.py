@@ -15,11 +15,11 @@ def create_commands_markup():
     add_hashtag_button = KeyboardButton('Добавить хештеги')
     delete_hashtag_button = KeyboardButton('Удалить хештеги')
     list_of_hashtags_button = KeyboardButton('Список хештегов')
-    add_ps_button = KeyboardButton('Добавить подпись')
+    add_sign_button = KeyboardButton('Добавить подпись')
     # cancel_button = KeyboardButton('Отмена')
     commands_markup.add(add_hashtag_button,
                         delete_hashtag_button,
-                        add_ps_button,
+                        add_sign_button,
                         list_of_hashtags_button)
     return commands_markup
 
@@ -33,7 +33,7 @@ async def get_commands_markup(message: Message, bot: AsyncTeleBot):
         await bot.send_message(message, "У вас нет прав на выполнение этой команды!")
     else:
         await bot.send_message(message.chat.id,
-                         text='Команды выведены', reply_markup=create_commands_markup())
+                               text='Команды выведены', reply_markup=create_commands_markup())
         await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
 
 
@@ -44,7 +44,7 @@ async def on_button_choose(message: Message, bot: AsyncTeleBot):
         await bot.send_message(message.chat.id, 'Через пробел укажите хештеги, которые вы хотите добавить',
                                reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton('Отмена')))
     if message.text == 'Добавить подпись':
-        await bot.set_state(message.from_user.id, MyStates.on_ps_add, message.chat.id)
+        await bot.set_state(message.from_user.id, MyStates.on_sign_add, message.chat.id)
         await bot.send_message(message.chat.id, 'Напишите примечание',
                                reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton('Отмена')))
     if message.text == 'Удалить хештеги':
@@ -100,18 +100,13 @@ async def on_list_of_hashtags(message: Message, bot: AsyncTeleBot):
     log.info('\nСписок хештегов выведен')
 
 
-async def on_ps_add(message: Message, bot: AsyncTeleBot):
+async def on_sign_add(message: Message, bot: AsyncTeleBot):
     log.info('\nМомент добавления новой подписи')
     if message.text == 'Отмена':
         await on_decline(message, bot)
     else:
         for item in db_admins.admins:
             if message.from_user.id == item['id']:
-                db_admins.update(item['id'], {'ps': message.text})
+                db_admins.update(item['id'], {'sign': message.text})
         await bot.send_message(message.chat.id, 'Примечание обновлено', reply_markup=create_commands_markup())
         await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
-
-
-
-
-

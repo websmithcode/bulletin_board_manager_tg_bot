@@ -59,11 +59,11 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
     """
     log.info('method: on_post_processing'
              'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
+    admin_user = db_admins.get_admin_by_id(call.from_user.id)
+    sign = admin_user.get('sign', '')
 
-    ps = [x['ps']
-          for x in db_admins.admins if x['id'] == call.message.chat.id][0]
     r = messages.insert(
-        {'id': call.message.id, 'body': call.message.json, 'ps': ps, 'tags': None})
+        {'id': call.message.id, 'body': call.message.json, 'sign': sign, 'tags': None})
     log.info('New message in db: %s', r)
     try:
         log.info('parse and update before: %s', messages.get(doc_id=r))

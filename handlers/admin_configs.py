@@ -61,11 +61,12 @@ async def cmd_add_admin(message: Message, bot: AsyncTeleBot):
             fullname = fullname + contact.first_name
         if contact.last_name:
             fullname = fullname + contact.last_name
-        db_admins.admins = {'id': contact.user_id,
+        db_admins.admins = {'user_id': contact.user_id,
                             'fullname': fullname,
                             'username': None,
-                            'ps': " "}
-        log.info(f'method: cmd_add_admin, admin with id {message.text} was added')
+                            'sign': " "}
+        log.info(
+            f'method: cmd_add_admin, admin with id {message.text} was added')
     print(db_admins.admins)
 
 
@@ -79,7 +80,8 @@ async def cmd_remove_admin(message: Message, bot: AsyncTeleBot):
     if not check_permissions(message.from_user.id):
         await bot.reply_to(message, 'У вас нет прав на выполнение этой команды')
     else:
-        text = message.text.replace('/remove_admin', '').strip().replace('@', '')
+        text = message.text.replace(
+            '/remove_admin', '').strip().replace('@', '')
         db_admins.remove_admin(id=text)
         log.info(f'method: cmd_remove_admin, admin with id {text} was deleted')
 
@@ -97,11 +99,12 @@ async def cmd_remove_hashtag(message: Message, bot: AsyncTeleBot):
         hashtags = message.text.replace('/remove_hashtag', '').strip().split()
         for hashtag in hashtags:
             db_tags.remove_tag(hashtag)
-            log.info(f'method: cmd_remove_hashtag, hashtag {hashtag} was deleted')
+            log.info(
+                f'method: cmd_remove_hashtag, hashtag {hashtag} was deleted')
         await bot.reply_to(message, "Хештег удален!")
 
 
-async def cmd_add_ps(message: Message, bot: AsyncTeleBot):
+async def cmd_add_sign(message: Message, bot: AsyncTeleBot):
     """Хендлер команды добавляющей приписку к сообщению.
 
     Args:
@@ -111,14 +114,15 @@ async def cmd_add_ps(message: Message, bot: AsyncTeleBot):
     if not check_permissions(message.from_user.id):
         await bot.reply_to(message, 'У вас нет прав на выполнение этой команды')
     else:
-        text = message.text.replace('/add_ps ', '')
-        if text == '/add_ps':
+        text = message.text.replace('/add_sign ', '')
+        if text == '/add_sign':
             await bot.reply_to(message, 'Примечание не указано!')
         else:
             for item in db_admins.admins:
                 if message.from_user.id == item['id']:
-                    db_admins.update(item['id'], {'ps': text})
-                    log.info(f'method: cmd_add_ps, ps updated for {item["id"]}, current ps: {item["ps"]}')
+                    db_admins.update(item['id'], {'sign': text})
+                    log.info(
+                        f'method: cmd_add_sign, sign updated for {item["id"]}, current sign: {item["sign"]}')
 
 
 def params_mapping(message_type: str, params: Dict) -> Dict:
@@ -138,8 +142,10 @@ def params_mapping(message_type: str, params: Dict) -> Dict:
         'text': ['text'],
         'animation': ['caption', 'animation']
     }
-    map_list = [v for k in _map for v in _map[k]] #pylint: disable=consider-using-dict-items
-    wanted = [wanted for _type in _map for wanted in _map[_type] if _type == message_type] #pylint: disable=consider-using-dict-items
+    map_list = [v for k in _map for v in _map[k]
+                ]  # pylint: disable=consider-using-dict-items
+    wanted = [wanted for _type in _map for wanted in _map[_type]
+              if _type == message_type]  # pylint: disable=consider-using-dict-items
     unwanted = set(map_list) - set(wanted)
     for key in unwanted:
         params.pop(key, None)
@@ -147,7 +153,7 @@ def params_mapping(message_type: str, params: Dict) -> Dict:
     return params
 
 
-def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable: #pylint: disable=unused-argument
+def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable:  # pylint: disable=unused-argument
     """Метод возвращающий процедуру отправки сообщения на основе типа сообщения.
 
     Args:
@@ -159,7 +165,7 @@ def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable: #pylin
     """
     message_type = message_type.replace('text', 'message')
     log.info(f'method: get_send_procedure, status: done')
-    return eval(f'bot.send_{message_type}') #pylint: disable=eval-used
+    return eval(f'bot.send_{message_type}')  # pylint: disable=eval-used
 
 
 def string_builder(**kwargs):
@@ -169,10 +175,11 @@ def string_builder(**kwargs):
         separator = '_'*15
         tags = ' '.join(list(kwargs.get('tags', [''])))
         text = f"{tags}\n"\
-        f"\n{kwargs.get('text')}\n\n"\
-        'Если вас заинтересовало данное предложение напишите:\n'\
-        f"{kwargs.get('username')}\n\n"
-        count = adv.extract_emoji(text)['overview']['num_emoji'] # Это просто пиздец
+            f"\n{kwargs.get('text')}\n\n"\
+            'Если вас заинтересовало данное предложение напишите:\n'\
+            f"{kwargs.get('username')}\n\n"
+        count = adv.extract_emoji(
+            text)['overview']['num_emoji']  # Это просто пиздец
         for emoji in adv.extract_emoji(text)['emoji_flat']:
             if len(f"{ord(emoji):X}") == 4:
                 count -= 1
@@ -186,7 +193,7 @@ def string_builder(**kwargs):
         entities.append(ent)
         print('ГАВНИЩЕ')
         text += f"{separator}\n"\
-            f"{kwargs.pop('ps')}"
+            f"{kwargs.pop('sign')}"
         log.info(f'method: string_builder, text: {text}')
 
         return text, entities
@@ -194,18 +201,19 @@ def string_builder(**kwargs):
         log.error(traceback.format_exc())
 
 
-
 def parse_and_update(message_record: Document, **kwargs):
     body = kwargs.pop('body', None)
     if not kwargs.pop('flag', False):
-        entities: List[Dict] = body.get('entities', None) if body.get('entities', None) else body.get('caption_entities', None)
-        text: str = body.get('text', None) if body.get('text', None) else body.get('caption')
+        entities: List[Dict] = body.get('entities', None) if body.get(
+            'entities', None) else body.get('caption_entities', None)
+        text: str = body.get('text', None) if body.get(
+            'text', None) else body.get('caption')
         text = '\n'.join(text.split('\n')[:-1])
         username = entities[-1].get('user').get('username')
         user_id = entities[-1].get('user').get('id')
         user = entities[-1].get('user')
         del entities[-1]
-        for i,e in enumerate(entities):
+        for i, e in enumerate(entities):
             entities[i] = MessageEntity.de_json(json.dumps(e))
         # text = parse_entities(text, entities)
         flag = True
@@ -216,11 +224,11 @@ def parse_and_update(message_record: Document, **kwargs):
         username = kwargs.pop('username', None)
 
     id = kwargs.pop('id', None)
-    ps = kwargs.pop('ps', None)
+    sign = kwargs.pop('sign', None)
 
     _ = memory.update({
-        'id': id,
-        'ps': ps,
+        'user_id': id,
+        'sign': sign,
         'tags': [],
         'user_id': user_id,
         'username': username,
@@ -228,8 +236,9 @@ def parse_and_update(message_record: Document, **kwargs):
         'text': text,
         'flag': flag,
         'user': user,
-        }, doc_ids=[message_record.doc_id])
+    }, doc_ids=[message_record.doc_id])
     log.info(f'method: parse_and_update, memory: {memory}')
+
 
 def get_params_for_message(message_text: str, message: Message) -> Dict:
     """Метод возвращающий необходимые параметры для сообщения на основе типа сообщения.
@@ -242,12 +251,12 @@ def get_params_for_message(message_text: str, message: Message) -> Dict:
         `Dict`: Необходимые параметры для сообщения.
     """
     params = {
-    'text': message_text,
-    'caption': message_text,
-    'photo': message.json.get('photo', [{}])[0].get('file_id', None),
-    'video': message.json.get('video', {}).get('file_id',None),
-    'document': message.json.get('document', {}).get('file_id', None),
-    'animation': message.json.get('animation', {}).get('file_id', None)
+        'text': message_text,
+        'caption': message_text,
+        'photo': message.json.get('photo', [{}])[0].get('file_id', None),
+        'video': message.json.get('video', {}).get('file_id', None),
+        'document': message.json.get('document', {}).get('file_id', None),
+        'animation': message.json.get('animation', {}).get('file_id', None)
     }
     log.info(f'method: get_params_for_message, params: {params}')
     return params_mapping(message.content_type, params)
@@ -281,14 +290,15 @@ def parse_entities(text: str, entities: List[Dict]) -> str:
             print('___________\n'+text)
             o = entity['offset'] + counter
             l = entity['length']
-            if any(o>e for e in emojis):
-                o-= len([e for e in emojis if o>e])
-            elif any(o+l>e>o for e in emojis):
-                l-= len([e for e in emojis if o+l>e>o])
+            if any(o > e for e in emojis):
+                o -= len([e for e in emojis if o > e])
+            elif any(o+l > e > o for e in emojis):
+                l -= len([e for e in emojis if o+l > e > o])
             if entity['type'] in ('text_link', 'text_mention'):
                 if not entity.get('url', None):
                     entity['url'] = f'tg://user?id={entity["user"]["id"]}'
-                text = text[:o]+'['+text[o:o+l]+']'+f'({entity["url"]})'+text[o+l:]
+                text = text[:o]+'['+text[o:o+l]+']' + \
+                    f'({entity["url"]})'+text[o+l:]
                 counter += 4 + len(entity['url'])
             elif entity['type'] == 'bold':
                 text = text[:o]+'*'+text[o:o+l]+'*'+text[o+l:]
@@ -318,12 +328,12 @@ def parse_entities(text: str, entities: List[Dict]) -> str:
 
 def entity_to_dict(self: MessageEntity):
     return {"type": self.type,
-                "offset": self.offset,
-                "length": self.length,
-                "url": self.url,
-                "user": self.user.to_dict() if self.user else None,
-                "language":  self.language,
-                "custom_emoji_id": self.custom_emoji_id}
+            "offset": self.offset,
+            "length": self.length,
+            "url": self.url,
+            "user": self.user.to_dict() if self.user else None,
+            "language":  self.language,
+            "custom_emoji_id": self.custom_emoji_id}
 
 
 def calculate_offset(increment, entities: List[MessageEntity]):

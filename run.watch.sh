@@ -1,1 +1,2 @@
-npx nodemon --watch . --exec python main.py
+poetry run npx nodemon -w . -e py --exec python main.py
+
