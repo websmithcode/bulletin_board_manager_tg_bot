@@ -45,8 +45,6 @@ async def on_error_message_reply(message: Message, bot: AsyncTeleBot):
     params = get_params_for_message(text, message)
     params['chat_id'] = bot.config['CHAT_ID']
     params['entities'] = message.entities
-    if message_type == 'text':
-        params['disable_web_page_preview'] = True
     await get_send_procedure(message_type, bot)(**params)
 
 
@@ -188,9 +186,6 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
 
     params = get_params_for_message(text_html, call.message)
     params['chat_id'] = bot.config['CHAT_ID']
-
-    if message_type == 'text':
-        params['disable_web_page_preview'] = True
 
     await get_send_procedure(message_type, bot)(**params)
     await bot.edit_message_reply_markup(call.message.chat.id,

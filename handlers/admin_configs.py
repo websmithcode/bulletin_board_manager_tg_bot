@@ -164,7 +164,10 @@ def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable:  # pyl
     """
     message_type = message_type.replace('text', 'message')
     log.info(f'method: get_send_procedure, status: done')
-    return eval(f'bot.send_{message_type}')  # pylint: disable=eval-used
+    func = eval(f'bot.send_{message_type}')
+    if (message_type == 'message'):
+        return lambda *args, **kwargs: func(*args, **kwargs, disable_web_page_preview=True)  # pylint: disable=eval-used
+    return func
 
 
 def string_builder(message: Document):
