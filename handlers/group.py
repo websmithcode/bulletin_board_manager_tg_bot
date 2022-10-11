@@ -1,10 +1,8 @@
 """Модуль групповых хендлеров"""
 import asyncio
-import json
 import traceback
-from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, MessageEntity, User
+from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, MessageEntity
 from telebot.async_telebot import AsyncTeleBot
-import advertools as adv
 from utils.logger import log
 from utils.database import AdminDatabase, UnmarkedMessages
 from handlers.admin_configs import get_params_for_message, get_send_procedure, entity_to_dict
