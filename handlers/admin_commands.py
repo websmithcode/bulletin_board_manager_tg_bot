@@ -106,6 +106,6 @@ async def on_sign_add(message: Message, bot: AsyncTeleBot):
     else:
         for item in db_admins.admins:
             if message.from_user.id == item['id']:
-                db_admins.update(item['id'], {'sign': message.text})
+                db_admins.update(item['id'], {'sign': message.html_text})
         await bot.send_message(message.chat.id, 'Примечание обновлено', reply_markup=create_commands_markup())
         await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
