@@ -23,89 +23,111 @@ from telebot.asyncio_storage import StateMemoryStorage
 from telebot import asyncio_filters
 from utils.states import MyStates
 
-__TOKEN = os.environ.get('TOKEN')
-bot = AsyncTeleBot(__TOKEN,
-                   state_storage=StateMemoryStorage())
 
+class Bot(AsyncTeleBot):
+    def __init__(self, config, **kwargs):
+        self.config = config
+        super().__init__(self.config['TOKEN'], **kwargs)
+        self.commands = [
+            # Admin handlers
+            {
+                'callback': cmd_remove_hashtag,
+                'commands': ['remove_hashtag']
+            },
+            {
+                'callback': cmd_remove_admin,
+                'commands': ['remove_admin']
+            },
+            {
+                'callback': cmd_add_admin,
+                'content_types': ['contact'],
+            },
+            {
+                'callback': cmd_add_hashtag,
+                'commands': ['add_hashtag'],
+            },
+            {
+                'callback': cmd_add_ps,
+                'commands': ['add_ps'],
+            },
+            # Admin button handlers
+            {
+                'callback': get_commands_markup,
+                'commands': ['start'],
+            },
+            {
+                'callback': on_button_choose,
+                'state': MyStates.on_button_choose,
+            },
+            {
+                'callback': on_hashtag_add,
+                'state': MyStates.on_hashtag_add,
+            },
+            {
+                'callback': on_hashtag_delete,
+                'state': MyStates.on_hashtag_delete,
+            },
+            {
+                'callback': on_ps_add,
+                'state': MyStates.on_ps_add,
+            },
+            # Basic handlers
+            {
+                'callback': on_message_received,
+                'content_types': content_type_media,
+            },
+            # Query handlers
+            {
+                'callback': on_hashtag_choose,
+                'func': lambda call: '#' in call.data,
+            },
+            {
+                'callback': send_message_to_group,
+                'func': lambda call: call.data == 'end_button',
+            },
+            {
+                'callback': on_post_processing,
+                'func': lambda call: call.data in ('accept', 'decline', 'accept_error'),
+            }
+        ]
+        self.queries = [
+            {
+                'callback': on_hashtag_choose,
+                'func': lambda call: '#' in call.data
+            },
+            {
+                'callback': send_message_to_group,
+                'func': lambda call: call.data == 'end_button'
+            },
+            {
+                'callback': on_post_processing,
+                'func': lambda call: call.data in ('accept', 'decline', 'accept_error')
+            },
+        ]
 
-def register_handlers():
-    # Регистрация хендлеров бота
-    # Админские хендлеры
-    bot.register_message_handler(callback=cmd_remove_hashtag,
-                                 pass_bot=True,
-                                 commands=['remove_hashtag'])
-    bot.register_message_handler(callback=cmd_remove_admin,
-                                 pass_bot=True,
-                                 commands=['remove_admin'])
-    bot.register_message_handler(callback=cmd_add_admin,
-                                 content_types=['contact'],
-                                 pass_bot=True)
-    bot.register_message_handler(callback=cmd_add_hashtag,
-                                 commands=['add_hashtag'],
-                                 pass_bot=True)
-    bot.register_message_handler(callback=cmd_add_ps,
-                                 commands=['add_ps'],
-                                 pass_bot=True)
-    # bot.register_message_handler(callback=on_error_message_reply,
-    #                              func=lambda x: x.reply_to_message,
-    #                              pass_bot=True)
+        self.init()
 
-    # Хендлеры для команд администратора через кнопки
-    bot.register_message_handler(callback=get_commands_markup,
-                                 commands=['start'],
-                                 pass_bot=True)
-    bot.register_message_handler(callback=on_button_choose,
-                                 state=MyStates.on_button_choose,
-                                 pass_bot=True)
-    bot.register_message_handler(callback=on_hashtag_add,
-                                 state=MyStates.on_hashtag_add,
-                                 pass_bot=True)
-    bot.register_message_handler(callback=on_hashtag_delete,
-                                 state=MyStates.on_hashtag_delete,
-                                 pass_bot=True)
-    bot.register_message_handler(callback=on_ps_add,
-                                 state=MyStates.on_ps_add,
-                                 pass_bot=True)
-    # -----------------------------------------------
+    def init(self):
+        self.register_commands()
+        self.register_queries()
+        self.add_filters()
 
-    # Базовые Хендлеры
-    bot.register_message_handler(callback=on_message_received,
-                                 content_types=content_type_media,
-                                 pass_bot=True)
-    # Обработчики запросов
-    bot.register_callback_query_handler(callback=on_hashtag_choose,
-                                        func=lambda call: '#' in call.data,
-                                        pass_bot=True)
+    def register_commands(self):
+        for command in self.commands:
+            self.register_message_handler(pass_bot=True, **command)
 
-    bot.register_callback_query_handler(callback=send_message_to_group,
-                                        func=lambda call: call.data == 'end_button',
-                                        pass_bot=True)
+    def register_queries(self):
+        for query in self.queries:
+            self.register_callback_query_handler(pass_bot=True, **query)
 
-    bot.register_callback_query_handler(callback=on_post_processing,
-                                        func=lambda call: call.data in ('accept', 'decline', 'accept_error'),
-                                        pass_bot=True)
+    def add_filters(self):
+        self.add_custom_filter(asyncio_filters.StateFilter(self))
+        self.add_custom_filter(asyncio_filters.IsDigitFilter())
 
+    def start_polling(self):
+        log.info("Starting polling...")
 
-register_handlers()
-# print(content_type_media)
-
-bot.add_custom_filter(asyncio_filters.StateFilter(bot))
-bot.add_custom_filter(asyncio_filters.IsDigitFilter())
-
-
-# async def set_commands():
-#     await bot.set_my_commands(commands=[BotCommand()])
-
-
-def start_polling():
-    """Метод запуска получения обновлений"""
-    log.info("Starting polling...")
-    # asyncio.run(set_commands())
-    asyncio.run(bot.polling(
-        non_stop=True,
-        skip_pending=True
-    ))
-
-
-if __name__ == '__main__':
-    start_polling()
+        asyncio.run(self.polling(
+            non_stop=True,
+            skip_pending=True
+        ))

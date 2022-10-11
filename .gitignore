@@ -1,13 +1,5 @@
-Include
-Lib
-Scripts
-pyvenv.cfg
-.idea
+config.ini
 __pycache__
 .vscode/
-data.db
-admins
-tags
-.env
-unmarked_messages
 *.pdf
+db/

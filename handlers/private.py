@@ -43,7 +43,7 @@ async def on_error_message_reply(message: Message, bot: AsyncTeleBot):
     message_type = message.content_type
     text = message.text
     params = get_params_for_message(text, message)
-    params['chat_id'] = os.environ.get('CHAT_ID')
+    params['chat_id'] = bot.config['CHAT_ID']
     params['entities'] = message.entities
     if message_type == 'text':
         params['disable_web_page_preview'] = True
@@ -60,14 +60,16 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
     log.info('method: on_post_processing'
              'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
 
-    ps = [x['ps'] for x in db_admins.admins if x['id'] == call.message.chat.id][0]
-    r = messages.insert({'id': call.message.id, 'body': call.message.json, 'ps': ps, 'tags': None})
+    ps = [x['ps']
+          for x in db_admins.admins if x['id'] == call.message.chat.id][0]
+    r = messages.insert(
+        {'id': call.message.id, 'body': call.message.json, 'ps': ps, 'tags': None})
     log.info('New message in db: %s', r)
     try:
         log.info('parse and update before: %s', messages.get(doc_id=r))
         parse_and_update(messages.get(doc_id=r), **messages.get(doc_id=r))
         log.info('parse and update after: %s', messages.get(doc_id=r))
-    except Exception as ex: #pylint: disable=broad-except
+    except Exception as ex:  # pylint: disable=broad-except
         log.error(ex)
 
     log.info(call.message.json)
@@ -84,18 +86,19 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
                  call.message.chat.id, call.message.id, call.id, call.data, call.message)
 
     elif call.data == 'decline':
-        #TODO: recalculate offsets
+        # TODO: recalculate offsets
         #      string builder
-        text, entities = string_builder(**messages.get(Query().id == call.message.id))
+        text, entities = string_builder(
+            **messages.get(Query().id == call.message.id))
         if call.message.content_type == 'text':
             await bot.edit_message_text(chat_id=call.from_user.id,
                                         message_id=call.message.id,
                                         text=f'{text}\n❌ОТКЛОНЕНО❌',
                                         entities=entities)
             log.info('method: on_post_processing'
-                      'message with chat_id %s and message_Id %s was decline'
-                      '%s, %s, %s',
-                      call.message.chat.id,call.message.id,call.id,call.data,call.message)
+                     'message with chat_id %s and message_Id %s was decline'
+                     '%s, %s, %s',
+                     call.message.chat.id, call.message.id, call.id, call.data, call.message)
         else:
             await bot.edit_message_caption(chat_id=call.from_user.id,
                                            message_id=call.message.id,
@@ -105,6 +108,7 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
                      'caption with chat_id %s and message_Id %s was decline'
                      '%s, %s, %s',
                      call.message.chat.id, call.message.id, call.id, call.data, call.message)
+
 
 async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     """Хендлер выбора хештегов новых сообщений.
@@ -127,15 +131,17 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
 
     log.info('tags: %s', tags)
 
-    _ = messages.update({'tags': tags},doc_ids=[msg.doc_id])
+    _ = messages.update({'tags': tags}, doc_ids=[msg.doc_id])
 
     log.info('update: %s', _)
 
     if call.message.content_type == 'text':
-        #TODO: recalculate offsets
+        # TODO: recalculate offsets
         #      string_builder
-        log.info(f'\nBEFORE STRING BUILDER: {messages.get(Query().id == call.message.id)}')
-        text, entities = string_builder(**messages.get(Query().id == call.message.id))
+        log.info(
+            f'\nBEFORE STRING BUILDER: {messages.get(Query().id == call.message.id)}')
+        text, entities = string_builder(
+            **messages.get(Query().id == call.message.id))
         entities = calculate_offset(len(tags[-1])+1, entities)
         print("ГАВНИЩЕ: ", entities, type(entities))
         await bot.edit_message_text(text=text,
@@ -146,7 +152,8 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
 
     else:
         call.message.caption = '' if not call.message.caption else call.message.caption
-        text, entities = string_builder(**messages.get(Query().id == call.message.id))
+        text, entities = string_builder(
+            **messages.get(Query().id == call.message.id))
         entities = calculate_offset(len(tags[-1])+1, entities)
         await bot.edit_message_caption(caption=text,
                                        chat_id=call.message.chat.id,
@@ -155,9 +162,9 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
                                        caption_entities=entities)
 
     log.info('method: on_hashtag_choose'
-                'caption was edited, callback data from callback query'
-                ' id %s is \'%s\', current message: %s',
-                call.id, call.data, call.message)
+             'caption was edited, callback data from callback query'
+             ' id %s is \'%s\', current message: %s',
+             call.id, call.data, call.message)
 
 
 async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
@@ -187,12 +194,13 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
     #             text = text.replace(f'{username}',
     #                                 f'[{username}](tg://user?id={user_id})\n')
     message_type = call.message.content_type
-    #TODO: recalculate offsets
+    # TODO: recalculate offsets
     #      string_builder
-    text, entities = string_builder(**messages.get(Query().id == call.message.id))
+    text, entities = string_builder(
+        **messages.get(Query().id == call.message.id))
 
     params = get_params_for_message(text, call.message)
-    params['chat_id'] = os.environ.get('CHAT_ID')
+    params['chat_id'] = bot.config['CHAT_ID']
     if message_type == 'text':
         params['disable_web_page_preview'] = True
         params['entities'] = entities
@@ -208,7 +216,7 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
 
     result = messages.remove(Query().id == call.message.id)
     log.info('method: send_message_to_group,removed resulted message from query, message: %s',
-              result)
+             result)
     log.info('method: send_message_to_group'
              'message: message with id %s '
              'message: \'%s\' is sended', call.message.id, text)
