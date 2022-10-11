@@ -8,7 +8,6 @@ from utils.database import TagDatabase, AdminDatabase, memory as messages
 from handlers.admin_configs import (check_permissions,
                                     get_params_for_message,
                                     get_send_procedure,
-                                    parse_and_update,
                                     string_builder,
                                     calculate_offset)
 

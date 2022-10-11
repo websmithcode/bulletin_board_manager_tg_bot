@@ -198,34 +198,6 @@ def string_builder(message: Document):
         log.error(traceback.format_exc())
 
 
-def parse_and_update(message_record: Document, **kwargs):
-    body = kwargs.pop('body', None)
-    if not kwargs.pop('flag', False):
-        html_text: str = body.get('text', None) if body.get(
-            'text', None) else body.get('caption')
-        html_text = '\n'.join(html_text.split('\n')[:-1])
-        flag = True
-    else:
-        html_text = kwargs.pop('html_text', None)
-    log.info(f'method: parse_and_update, KWARGS: {kwargs}')
-    # user_id =
-    # username =
-    message_id = kwargs.pop('id', None)
-    sign = kwargs.pop('sign', None)
-
-    _ = memory.update({
-        'id': message_id,
-        'sign': sign,
-        'tags': [],
-        'user_id': user_id,
-        'username': username,
-        'html_text': html_text,
-        'flag': flag,
-        'user': username
-    }, doc_ids=[message_record.doc_id])
-    log.info(f'method: parse_and_update, memory: {memory}')
-
-
 def get_params_for_message(message_text: str, message: Message) -> Dict:
     """Метод возвращающий необходимые параметры для сообщения на основе типа сообщения.
 
