@@ -2,8 +2,7 @@ from telebot.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKey
 from telebot.async_telebot import AsyncTeleBot
 from utils.logger import log
 from utils.database import TagDatabase, AdminDatabase
-from handlers.admin_configs import check_permissions, get_params_for_message, get_send_procedure
-from utils.database import memory as messages
+from handlers.admin_configs import check_permissions
 from utils.states import MyStates
 
 db_admins = AdminDatabase()

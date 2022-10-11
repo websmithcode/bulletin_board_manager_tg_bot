@@ -197,7 +197,7 @@ def string_builder(**kwargs):
         log.info(f'method: string_builder, text: {text}')
 
         return text, entities
-    except Exception as ex:
+    except Exception:
         log.error(traceback.format_exc())
 
 
