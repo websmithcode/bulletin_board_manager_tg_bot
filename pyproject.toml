@@ -17,6 +17,7 @@ advertools = "^0.13.2"
 
 [tool.poetry.group.dev.dependencies]
 autopep8 = "^1.7.0"
+pylint = "^2.15.4"
 
 [build-system]
 requires = ["poetry-core"]

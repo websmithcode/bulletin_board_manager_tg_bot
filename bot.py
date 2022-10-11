@@ -1,8 +1,9 @@
-"""Точка запуска бота"""
-import os
+""" Bot class module """
 import asyncio
 from telebot.async_telebot import AsyncTeleBot
 from telebot.util import content_type_media
+from telebot import asyncio_filters
+from utils.states import MyStates
 from utils.logger import log
 from handlers.group import on_message_received
 from handlers.private import on_hashtag_choose, send_message_to_group, on_post_processing
@@ -19,12 +20,10 @@ from handlers.admin_commands import (get_commands_markup,
                                      on_ps_add,
                                      on_hashtag_delete)
 
-from telebot.asyncio_storage import StateMemoryStorage
-from telebot import asyncio_filters
-from utils.states import MyStates
-
 
 class Bot(AsyncTeleBot):
+    """ Bot class """
+
     def __init__(self, config, **kwargs):
         self.config = config
         super().__init__(self.config['TOKEN'], **kwargs)
@@ -108,23 +107,46 @@ class Bot(AsyncTeleBot):
         self.init()
 
     def init(self):
+        """ Init bot
+
+        Register commands, queries, filters
+        """
         self.register_commands()
         self.register_queries()
         self.add_filters()
 
     def register_commands(self):
+        """ Register bot message commands
+
+        Cycle through self.commands list and register each command"""
         for command in self.commands:
             self.register_message_handler(pass_bot=True, **command)
 
     def register_queries(self):
+        """ Register bot queries
+
+        Cycle through self.queries list and register each query"""
         for query in self.queries:
             self.register_callback_query_handler(pass_bot=True, **query)
 
     def add_filters(self):
+        """ Bot class module
+
+        This module contains Bot class, which is used to create bot instance
+        """
+
         self.add_custom_filter(asyncio_filters.StateFilter(self))
         self.add_custom_filter(asyncio_filters.IsDigitFilter())
 
     def start_polling(self):
+        """ Start polling
+
+        Start polling and run event loop
+        """
+        log.info('Bot started')
+        self.polling(none_stop=True)
+        loop = asyncio.get_event_loop()
+        loop.run_forever()
         log.info("Starting polling...")
 
         asyncio.run(self.polling(
