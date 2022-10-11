@@ -1,12 +1,11 @@
 """Модуль различных хендлеров и вспомогательных методов."""
 import traceback
-import re
 from typing import Callable, Dict, List
 from tinydb.table import Document
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import Message, MessageEntity, User
 from utils.logger import log
-from utils.database import AdminDatabase, TagDatabase, memory
+from utils.database import AdminDatabase, TagDatabase
 
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
@@ -21,7 +20,7 @@ def check_permissions(user_id: int) -> bool:
     Returns:
         `bool`: Имеет ли права пользователь.
     """
-    log.info(f'method: check_permissions, called')
+    log.info('method: check_permissions, called')
     return user_id in [item['id'] for item in db_admins.admins]
 
 
@@ -39,7 +38,7 @@ async def cmd_add_hashtag(message: Message, bot: AsyncTeleBot):
         hashtags = text.split()
         for hashtag in hashtags:
             db_tags.tags = hashtag
-            log.info(f'method: cmd_add_hashtag,hashtag: {hashtag} was added')
+            log.info('method: cmd_add_hashtag,hashtag: %s was added', hashtag)
         await bot.reply_to(message, "Хештег добавлен!")
 
 
@@ -64,8 +63,7 @@ async def cmd_add_admin(message: Message, bot: AsyncTeleBot):
                             'fullname': fullname,
                             'username': None,
                             'sign': " "}
-        log.info(
-            f'method: cmd_add_admin, admin with id {message.text} was added')
+        log.info('method: cmd_add_admin, admin with id %s was added', message.text)
     print(db_admins.admins)
 
 
@@ -82,7 +80,7 @@ async def cmd_remove_admin(message: Message, bot: AsyncTeleBot):
         text = message.text.replace(
             '/remove_admin', '').strip().replace('@', '')
         db_admins.remove_admin(id=text)
-        log.info(f'method: cmd_remove_admin, admin with id {text} was deleted')
+        log.info('method: cmd_remove_admin, admin with id %s was deleted', text)
 
 
 async def cmd_remove_hashtag(message: Message, bot: AsyncTeleBot):
@@ -98,8 +96,7 @@ async def cmd_remove_hashtag(message: Message, bot: AsyncTeleBot):
         hashtags = message.text.replace('/remove_hashtag', '').strip().split()
         for hashtag in hashtags:
             db_tags.remove_tag(hashtag)
-            log.info(
-                f'method: cmd_remove_hashtag, hashtag {hashtag} was deleted')
+            log.info('method: cmd_remove_hashtag, hashtag %s was deleted', hashtag)
         await bot.reply_to(message, "Хештег удален!")
 
 
@@ -121,7 +118,7 @@ async def cmd_add_sign(message: Message, bot: AsyncTeleBot):
                 if message.from_user.id == item['id']:
                     db_admins.update(item['id'], {'sign': text})
                     log.info(
-                        f'method: cmd_add_sign, sign updated for {item["id"]}, current sign: {item["sign"]}')
+                        'method: cmd_add_sign, sign updated for %s, current sign: %s', item["id"], item["sign"])
 
 
 def params_mapping(message_type: str, params: Dict) -> Dict:
@@ -148,7 +145,7 @@ def params_mapping(message_type: str, params: Dict) -> Dict:
     unwanted = set(map_list) - set(wanted)
     for key in unwanted:
         params.pop(key, None)
-    log.info(f'method: params_mapping, params: {params}')
+    log.info('method: params_mapping, params: %s', params)
     return params
 
 
@@ -163,10 +160,10 @@ def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable:  # pyl
         `Callable`: Метод отправки сообщения.
     """
     message_type = message_type.replace('text', 'message')
-    log.info(f'method: get_send_procedure, status: done')
-    func = eval(f'bot.send_{message_type}')
+    log.info('method: get_send_procedure, status: done')
+    func = eval(f'bot.send_{message_type}')  # pylint: disable=eval-used
     if (message_type == 'message'):
-        return lambda *args, **kwargs: func(*args, **kwargs, disable_web_page_preview=True)  # pylint: disable=eval-used
+        return lambda *args, **kwargs: func(*args, **kwargs, disable_web_page_preview=True)
     return func
 
 
@@ -191,7 +188,7 @@ def string_builder(message: Document):
             text_html += f"{separator}\n"\
                 f"{message.get('sign')}\n"
 
-        log.info(f'method: string_builder, text: {text_html}')
+        log.info('method: string_builder, text: %s', text_html)
 
         return text_html
     except Exception:
@@ -216,7 +213,7 @@ def get_params_for_message(message_text: str, message: Message) -> Dict:
         'document': message.json.get('document', {}).get('file_id', None),
         'animation': message.json.get('animation', {}).get('file_id', None)
     }
-    log.info(f'method: get_params_for_message, params: {params}')
+    log.info('method: get_params_for_message, params: %s', params)
     return params_mapping(message.content_type, params)
 
 
@@ -297,5 +294,5 @@ def entity_to_dict(self: MessageEntity):
 def calculate_offset(increment, entities: List[MessageEntity]):
     for entity in entities:
         entity.offset += increment
-    log.info(f'CALCULATE_OFFSET RETURN: {entities}')
+    log.info('CALCULATE_OFFSET RETURN: %s', entities)
     return entities

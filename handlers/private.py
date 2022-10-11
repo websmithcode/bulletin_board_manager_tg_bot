@@ -142,8 +142,7 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
         # TODO: recalculate offsets
         #      string_builder
         message = messages.get(Query().id == call.message.id)
-        log.info(
-            f'\nBEFORE STRING BUILDER: {message}')
+        log.info('\nBEFORE STRING BUILDER: %s', message)
         text, entities = string_builder(message)
         entities = calculate_offset(len(tags[-1])+1, entities)
         print("ГАВНИЩЕ: ", entities, type(entities))
