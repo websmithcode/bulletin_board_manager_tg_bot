@@ -1,5 +1,5 @@
 """Main run script"""
-from config import bot, config
+from config import bot
 
 
 def main():
