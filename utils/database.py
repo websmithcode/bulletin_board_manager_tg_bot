@@ -6,11 +6,13 @@ from utils.logger import log
 
 admin = Query()
 memory = TinyDB(storage=MemoryStorage)
+
+
 class AdminDatabase():
     """Класс представляюший объект базы администраторов."""
-    def __init__(self, **kwargs):
-        self.__db = TinyDB(kwargs.pop('db', 'data/admins'), encoding='utf8')
 
+    def __init__(self, **kwargs):
+        self.__db = TinyDB(kwargs.pop('db', 'db/admins.json'), encoding='utf8')
 
     @property
     def admins(self) -> List[Dict]:
@@ -22,16 +24,14 @@ class AdminDatabase():
         log.info('Вызван список администраторов!')
         return self.__db.all()
 
-
     @admins.setter
     def admins(self, value: Dict):
         """Сеттер поля администраторов, позволяющий добавлять документы в базу."""
         _ = self.__db.insert({'id': value.pop('id'),
-                          'username': value.pop('username'),
-                          'fullname': value.pop('fullname'),
-                          'ps': value.pop('ps', None)})
+                              'username': value.pop('username'),
+                              'fullname': value.pop('fullname'),
+                              'ps': value.pop('ps', None)})
         log.info('Запись администратора успешно добавлена! Id: %s.', str(_))
-
 
     def update(self, admin_id: int, query: Dict):
         """Метод позволяющий обновить записи в базе.
@@ -39,7 +39,7 @@ class AdminDatabase():
         Args:
             `admin_id (int)`: ID администратора.
             `query (Dict)`: Запись изменений.
-        """        
+        """
         self.__db.update(query, admin.id == admin_id)
 
     def remove_admin(self, **kwargs):
@@ -54,11 +54,13 @@ class AdminDatabase():
 
 
 tag = Query()
+
+
 class TagDatabase():
     """Класс представляюший объект базы тегов."""
-    def __init__(self, **kwargs):
-        self.__db = TinyDB(kwargs.pop('db', 'data/tags'), encoding='utf8')
 
+    def __init__(self, **kwargs):
+        self.__db = TinyDB(kwargs.pop('db', 'db/tags.json'), encoding='utf8')
 
     @property
     def tags(self) -> List[Dict]:
@@ -70,39 +72,40 @@ class TagDatabase():
         log.info('Вызван список тегов!')
         return self.__db.all()
 
-
     @tags.setter
     def tags(self, value: str):
         """Сеттер поля тегов, позволяющий добавлять документы в базу."""
         _ = self.__db.insert({'tag': value})
         log.info('Тег успешно добавлен! Id: %s.', str(_))
 
-
     def remove_tag(self, value: str):
         """Метод позволяющий удалять теги из базы."""
         _ = self.__db.remove(tag.tag == value)
         log.info('Тег удален! Id: %s.', str(_))
 
+
 umassage = Query()
+
+
 class UnmarkedMessages():
     """Класс неразмеченных "новых" сообщений."""
-    def __init__(self, **kwargs) -> None:
-        self.__db = TinyDB(kwargs.pop('db', 'unmarked_messages'), encoding='utf8')
-        self.states = ['NEW', 'IN_PROCESS', 'DONE']
 
+    def __init__(self, **kwargs) -> None:
+        self.__db = TinyDB(kwargs.pop(
+            'db', 'db/unmarked_messages.json'), encoding='utf8')
+        self.states = ['NEW', 'IN_PROCESS', 'DONE']
 
     @property
     def messages(self) -> List[Dict]:
         """Поле представляющее список сообщений."""
         return self.__db.all()
 
-
     @messages.setter
     def messages(self, value: Dict):
         """Сеттер поля сообщений, позволяющий добавлять документы в базу."""
         self.__db.insert({
             'message_type': value.pop('message_type'),
-            'uid': value.pop('uid'), # 'chat_id!message_id'
+            'uid': value.pop('uid'),  # 'chat_id!message_id'
             'message_id': value.pop('message_id'),
             'chat_id': value.pop('chat_id'),
             'text': value.pop('text', None),
@@ -133,11 +136,11 @@ class UnmarkedMessages():
             }, umassage.uid == uid)
             log.info('Состояние изменено! Новое состояние: {new_state}')
 
-
     def set_state(self, uid: str, state: str):
         """Метод позволяющий задать необходимое состояние сообщения."""
         if not state in self.states:
-            log.error('Указанное состояние не соответствует ни одному из возможных!')
+            log.error(
+                'Указанное состояние не соответствует ни одному из возможных!')
             return
 
         self.__db.update({
