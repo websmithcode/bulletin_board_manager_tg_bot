@@ -1,5 +1,6 @@
 """Модуль групповых хендлеров"""
 import asyncio
+import json
 import traceback
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, MessageEntity
 from telebot.async_telebot import AsyncTeleBot
@@ -44,9 +45,20 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
         `message (Message)`: объект сообщения
         `bot (AsyncTeleBot)`: объект бота
     """
+    ignore_list_json = bot.config.get('CHATS_ID_IGNORE_LIST').replace("'", '"')
+    chats_id_ingore_list = [
+        str(chat_id)
+        for chat_id
+        in json.loads(ignore_list_json)
+    ]
 
     if message.from_user.is_bot:
-        return
+        if message.sender_chat is not None:
+            sender_chat_id = str(message.sender_chat.id)
+            if sender_chat_id in chats_id_ingore_list:
+                return
+        else:
+            return
 
     if message.chat.type not in ('group', 'supergroup'):
         return
