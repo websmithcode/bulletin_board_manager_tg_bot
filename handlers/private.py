@@ -92,26 +92,27 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
 
     elif call.data == 'decline':
         #      string builder
-        text, entities = string_builder(
-            messages.get(Query().id == call.message.id))
+        content_type = 'text' if call.message.content_type == 'text' else 'caption'
+        message_document = messages.get(Query().id == call.message.id)
+        html_text = string_builder(message_document)
+
+        edit_message_args = {
+            'chat_id': call.message.chat.id,
+            'message_id': call.message.id,
+            f'{content_type}': f'{html_text}\n\n❌ОТКЛОНЕНО❌',
+        }
         if call.message.content_type == 'text':
-            await bot.edit_message_text(chat_id=call.from_user.id,
-                                        message_id=call.message.id,
-                                        text=f'{text}\n❌ОТКЛОНЕНО❌',
-                                        entities=entities)
-            log.info('method: on_post_processing'
-                     'message with chat_id %s and message_Id %s was decline'
-                     '%s, %s, %s',
-                     call.message.chat.id, call.message.id, call.id, call.data, call.message)
-        else:
-            await bot.edit_message_caption(chat_id=call.from_user.id,
-                                           message_id=call.message.id,
-                                           caption=f'{text}\n❌ОТКЛОНЕНО❌',
-                                           entities=entities)
-            log.info('method: on_post_processing'
-                     'caption with chat_id %s and message_Id %s was decline'
-                     '%s, %s, %s',
-                     call.message.chat.id, call.message.id, call.id, call.data, call.message)
+            edit_message_args['disable_web_page_preview'] = True
+
+        edit_message = getattr(bot, f'edit_message_{content_type}')
+        await edit_message(**edit_message_args)
+
+        log.info(
+            'method: on_post_processing'
+            '%s with chat_id %s and message_Id %s was decline'
+            '%s, %s, %s',
+            content_type, call.message.chat.id, call.message.id, call.id, call.data, call.message
+        )
 
 
 async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
