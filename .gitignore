@@ -2,5 +2,7 @@ config.ini
 __pycache__
 .vscode/
 *.pdf
-db/
+db/*
 node_modules/
+
+!.gitkeep
