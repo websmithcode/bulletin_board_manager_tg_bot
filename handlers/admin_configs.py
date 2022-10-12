@@ -167,7 +167,7 @@ def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable:  # pyl
     return func
 
 
-def string_builder(message: Document):
+def string_builder(message: Document, remove_meta=True, add_sign=True) -> str:
     try:
         user: User = message.get('from_user')
         separator = '_'*15
@@ -176,17 +176,20 @@ def string_builder(message: Document):
         message_body = message.get('body')
         message_html_text = message_body.get('html_text')
 
-        # remove all after \n\n===== META =====
-        message_html_text = message_html_text.split('\n\n===== META =====')[0]
+        if remove_meta:
+            # remove all after \n\n===== META =====
+            message_html_text = message_html_text.split(
+                '\n\n===== META =====')[0]
 
-        text_html = f"{tags}\n"\
-            f"\n{message_html_text}\n\n"\
-            'Если вас заинтересовало данное предложение напишите:\n'\
-            f"{user_link_html}\n\n"
+        text_html = f"{tags}"\
+            f"\n\n{message_html_text}"
 
-        if message.get('sign', None):
-            text_html += f"{separator}\n"\
-                f"{message.get('sign')}\n"
+        if add_sign:
+            text_html += "\n\nЕсли вас заинтересовало данное предложение напишите:\n"\
+                f"{user_link_html}\n\n"
+            if message.get('sign', None):
+                text_html += f"{separator}"\
+                    f"\n{message.get('sign')}"
 
         log.info('method: string_builder, text: %s', text_html)
 

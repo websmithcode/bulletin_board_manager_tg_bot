@@ -9,6 +9,7 @@ from handlers.admin_configs import (check_permissions,
                                     get_send_procedure,
                                     string_builder,
                                     calculate_offset)
+from utils.states import MyStates
 
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
@@ -127,40 +128,44 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     #     call.data = call.data + '\n'
     msg = messages.get(Query().id == call.message.id)
 
+    hashtag = call.data
     log.info('message: %s', msg)
 
-    tags = msg.get('tags') or []
-    tags.append(call.data)
+    tags = set(msg.get('tags') or [])
+    if hashtag not in tags:
+        tags.add(hashtag)
+    else:
+        tags.remove(hashtag)
 
-    log.info('tags: %s', tags)
+    tags = list(tags)
+
+    log.info('tags: %s', str(tags))
 
     _ = messages.update({'tags': tags}, doc_ids=[msg.doc_id])
 
     log.info('update: %s', _)
 
+    message = messages.get(Query().id == call.message.id)
+    log.info('\nBEFORE STRING BUILDER: %s', message)
+    html__text = string_builder(message, remove_meta=False, add_sign=False)
+
     if call.message.content_type == 'text':
-        # TODO: recalculate offsets
-        #      string_builder
-        message = messages.get(Query().id == call.message.id)
-        log.info('\nBEFORE STRING BUILDER: %s', message)
-        text, entities = string_builder(message)
-        entities = calculate_offset(len(tags[-1])+1, entities)
-        print("ГАВНИЩЕ: ", entities, type(entities))
-        await bot.edit_message_text(text=text,
-                                    chat_id=call.message.chat.id,
-                                    message_id=call.message.id,
-                                    reply_markup=get_hashtag_markup(),
-                                    entities=entities)
+        await bot.edit_message_text(
+            text=html__text,
+            chat_id=call.message.chat.id,
+            message_id=call.message.id,
+            reply_markup=get_hashtag_markup(),
+            disable_web_page_preview=True
+        )
 
     else:
-        call.message.caption = '' if not call.message.caption else call.message.caption
-        text, entities = string_builder(message)
-        entities = calculate_offset(len(tags[-1])+1, entities)
-        await bot.edit_message_caption(caption=text,
-                                       chat_id=call.message.chat.id,
-                                       message_id=call.message.id,
-                                       reply_markup=get_hashtag_markup(),
-                                       caption_entities=entities)
+        # call.message.html_caption = call.message.html_caption or ''
+        await bot.edit_message_caption(
+            caption=html__text,
+            chat_id=call.message.chat.id,
+            message_id=call.message.id,
+            reply_markup=get_hashtag_markup(),
+        )
 
     log.info('method: on_hashtag_choose'
              'caption was edited, callback data from callback query'
