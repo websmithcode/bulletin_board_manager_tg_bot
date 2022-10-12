@@ -1,4 +1,5 @@
 """Модуль хендлеров приватных сообщений."""
+from os import remove
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
 from telebot.async_telebot import AsyncTeleBot
 from tinydb import Query
@@ -94,7 +95,8 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
         #      string builder
         content_type = 'text' if call.message.content_type == 'text' else 'caption'
         message_document = messages.get(Query().id == call.message.id)
-        html_text = string_builder(message_document)
+        html_text = string_builder(
+            message_document, remove_meta=False, add_sign=False)
 
         edit_message_args = {
             'chat_id': call.message.chat.id,
