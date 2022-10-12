@@ -1,17 +1,16 @@
 [tool.poetry]
-name = "business-chatbot"
+name = "bulletin_board_manager_tg_bot"
 version = "0.1.0"
 description = ""
-authors = ["nillkizz <alx.n.smith@gmail.com>"]
+authors = ["alx_n_smith <alx.n.smith@gmail.com>"]
 readme = "README.md"
-packages = [{include = "business_chatbot"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-pyTelegramBotAPI = "^4.7.0"
-tinydb = "^4.7.0"
-aiohttp = "^3.8.3"
-asyncio = "^3.4.3"
+pyTelegramBotAPI = "4.7.0"
+tinydb = "4.7.0"
+aiohttp = "3.8.3"
+asyncio = "3.4.3"
 
 
 [tool.poetry.group.dev.dependencies]
