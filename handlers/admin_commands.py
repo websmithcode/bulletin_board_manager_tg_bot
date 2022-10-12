@@ -74,6 +74,8 @@ async def on_hashtag_add(message: Message, bot: AsyncTeleBot):
     else:
         hashtags = message.text.split()
         for hashtag in hashtags:
+            # prepare hastag. If not starts with #, add it, or strip extra #
+            hashtag = "#" + hashtag.replace('#', '')
             db_tags.tags = hashtag
         await bot.send_message(message.chat.id, "Хештег добавлен!", reply_markup=create_commands_markup())
         await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
