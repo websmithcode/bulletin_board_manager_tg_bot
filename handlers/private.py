@@ -327,10 +327,6 @@ async def send_decline_notification_to_group(
 
     msg = await bot.send_message(bot.config['CHAT_ID'], text_html, disable_web_page_preview=True)
 
-    await bot.edit_message_reply_markup(call.message.chat.id,
-                                        message_id=call.message.message_id,
-                                        reply_markup='')
-
     removed_message_id = messages.remove(Query().id == call.message.id)
     log.info('method: send_decline_notification_to_group,removed resulted message from query, message: %s',
              removed_message_id)
