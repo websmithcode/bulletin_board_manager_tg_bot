@@ -13,9 +13,9 @@ db_tags = TagDatabase()
 
 def create_commands_markup():
     commands_markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    add_hashtag_button = KeyboardButton('Добавить хештеги')
-    delete_hashtag_button = KeyboardButton('Удалить хештеги')
-    list_of_hashtags_button = KeyboardButton('Список хештегов')
+    add_hashtag_button = KeyboardButton('Добавить теги')
+    delete_hashtag_button = KeyboardButton('Удалить теги')
+    list_of_hashtags_button = KeyboardButton('Список тегов')
     add_sign_button = KeyboardButton('Добавить подпись')
     send_post_to_group_button = KeyboardButton('Отправить пост в группу')
     # cancel_button = KeyboardButton('Отмена')
@@ -42,17 +42,17 @@ async def get_commands_markup(message: Message, bot: AsyncTeleBot):
 
 async def on_button_choose(message: Message, bot: AsyncTeleBot):
     log.info('\nВыбор кнопки')
-    if message.text == 'Добавить хештеги':
+    if message.text == 'Добавить теги':
         await bot.set_state(message.from_user.id, MyStates.on_hashtag_add, message.chat.id)
-        await bot.send_message(message.chat.id, 'Через пробел укажите хештеги, которые вы хотите добавить.',
+        await bot.send_message(message.chat.id, 'Через пробел укажите теги, которые вы хотите добавить.',
                                reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton('Отмена')))
     if message.text == 'Добавить подпись':
         await bot.set_state(message.from_user.id, MyStates.on_sign_add, message.chat.id)
         await bot.send_message(message.chat.id, 'Напишите примечание.',
                                reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton('Отмена')))
-    if message.text == 'Удалить хештеги':
+    if message.text == 'Удалить теги':
         await bot.set_state(message.from_user.id, MyStates.on_hashtag_delete, message.chat.id)
-        await bot.send_message(message.chat.id, 'Через пробел напишите хештеги, которые вы хотите удалить.',
+        await bot.send_message(message.chat.id, 'Через пробел напишите теги, которые вы хотите удалить.',
                                reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton('Отмена')))
         await on_list_of_hashtags(message, bot)
     if message.text == 'Список хештегов':
