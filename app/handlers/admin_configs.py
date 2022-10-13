@@ -175,9 +175,6 @@ def string_builder(message: Document, remove_meta=True, add_sign=True) -> str:
     try:
         separator = '_'*15
 
-        user_id = message['from']['id']
-        username = message['from']['username'] \
-            or message['from']['first_name'] + message['from']['last_name']
         tags = ' '.join(list(message.get('tags') or []))
 
         message_body = message.get('body') or message
