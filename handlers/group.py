@@ -19,7 +19,7 @@ async def send_info_message(msg, bot: AsyncTeleBot):
     msg = await bot.send_message(msg.chat.id,
                                  'Спасибо за пост, '
                                  f'[{msg.from_user.username}](tg://user?id={msg.from_user.id}), '
-                                 'он будет опубликован после проверки администратора',
+                                 'он будет опубликован после проверки администратора.',
                                  parse_mode='Markdown')
     await asyncio.sleep(15)
     await bot.delete_message(chat_id=msg.chat.id, message_id=msg.id)

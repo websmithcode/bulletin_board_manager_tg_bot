@@ -34,7 +34,7 @@ async def get_commands_markup(message: Message, bot: AsyncTeleBot):
         await bot.send_message(message, "У вас нет прав на выполнение этой команды!")
     else:
         await bot.send_message(message.chat.id,
-                               text='Команды выведены', reply_markup=create_commands_markup())
+                               text='Команды выведены.', reply_markup=create_commands_markup())
         await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
 
 
@@ -42,15 +42,15 @@ async def on_button_choose(message: Message, bot: AsyncTeleBot):
     log.info('\nВыбор кнопки')
     if message.text == 'Добавить хештеги':
         await bot.set_state(message.from_user.id, MyStates.on_hashtag_add, message.chat.id)
-        await bot.send_message(message.chat.id, 'Через пробел укажите хештеги, которые вы хотите добавить',
+        await bot.send_message(message.chat.id, 'Через пробел укажите хештеги, которые вы хотите добавить.',
                                reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton('Отмена')))
     if message.text == 'Добавить подпись':
         await bot.set_state(message.from_user.id, MyStates.on_sign_add, message.chat.id)
-        await bot.send_message(message.chat.id, 'Напишите примечание',
+        await bot.send_message(message.chat.id, 'Напишите примечание.',
                                reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton('Отмена')))
     if message.text == 'Удалить хештеги':
         await bot.set_state(message.from_user.id, MyStates.on_hashtag_delete, message.chat.id)
-        await bot.send_message(message.chat.id, 'Через пробел напишите хештеги, которые вы хотите удалить',
+        await bot.send_message(message.chat.id, 'Через пробел напишите хештеги, которые вы хотите удалить.',
                                reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton('Отмена')))
         await on_list_of_hashtags(message, bot)
     if message.text == 'Список хештегов':
@@ -65,7 +65,7 @@ async def on_decline(message: Message, bot: AsyncTeleBot):
     Cancel state
     """
     log.info('\nОтмена произведена')
-    await bot.send_message(message.chat.id, 'Действие отменено', reply_markup=create_commands_markup())
+    await bot.send_message(message.chat.id, 'Действие отменено.', reply_markup=create_commands_markup())
     await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
 
 
@@ -111,5 +111,5 @@ async def on_sign_add(message: Message, bot: AsyncTeleBot):
         for item in db_admins.admins:
             if message.from_user.id == item['id']:
                 db_admins.update(item['id'], {'sign': message.html_text})
-        await bot.send_message(message.chat.id, 'Примечание обновлено', reply_markup=create_commands_markup())
+        await bot.send_message(message.chat.id, 'Примечание обновлено.', reply_markup=create_commands_markup())
         await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
