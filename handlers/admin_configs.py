@@ -4,6 +4,7 @@ from typing import Callable, Dict, List
 from tinydb.table import Document
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import Message, MessageEntity, User
+from utils.helpers import remove_meta_from_text
 from utils.logger import log
 from utils.database import AdminDatabase, TagDatabase
 
@@ -178,9 +179,7 @@ def string_builder(message: Document, remove_meta=True, add_sign=True) -> str:
         message_html_text = message_body.get('html_text')
 
         if remove_meta:
-            # remove all after \n\n===== META =====
-            message_html_text = message_html_text.split(
-                '\n\n===== META =====')[0]
+            message_html_text = remove_meta_from_text(message_html_text)
 
         text_html = f"{tags}"\
             f"\n\n{message_html_text}"
@@ -222,10 +221,8 @@ def get_params_for_message(message_text: str, message: Message) -> Dict:
 
 
 def escape(pattern):
+    """ Escape special characters in a string. """
     _special_chars_map = {i: '\\' + chr(i) for i in b'()[]{}?*+-=|<_>^$\\&~#'}
-    """
-    Escape special characters in a string.
-    """
     if isinstance(pattern, str):
         return pattern.translate(_special_chars_map)
     else:
