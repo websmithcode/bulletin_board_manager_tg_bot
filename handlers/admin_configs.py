@@ -1,4 +1,5 @@
 """Модуль различных хендлеров и вспомогательных методов."""
+import itertools
 import traceback
 from typing import Callable, Dict, List
 from tinydb.table import Document
@@ -139,11 +140,11 @@ def params_mapping(message_type: str, params: Dict) -> Dict:
         'text': ['text'],
         'animation': ['caption', 'animation']
     }
-    map_list = [v for k in _map for v in _map[k]
-                ]  # pylint: disable=consider-using-dict-items
-    wanted = [wanted for _type in _map for wanted in _map[_type]
-              if _type == message_type]  # pylint: disable=consider-using-dict-items
-    unwanted = set(map_list) - set(wanted)
+    # Get set of values of _map
+    map_values_set = set(itertools.chain(*_map.values()))
+    wanted = _map.get(message_type, [])
+    unwanted = map_values_set - set(wanted)
+
     for key in unwanted:
         params.pop(key, None)
     log.info('method: params_mapping, params: %s', params)
@@ -164,7 +165,7 @@ def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable:  # pyl
     log.info(
         'method: get_send_procedure, status: done, message_type: %s', message_type)
     func = eval(f'bot.send_{message_type}')  # pylint: disable=eval-used
-    if (message_type == 'message'):
+    if message_type == 'message':
         return lambda *args, **kwargs: func(*args, **kwargs, disable_web_page_preview=True)
     return func
 
@@ -217,69 +218,19 @@ def get_params_for_message(message_text: str, message: Message) -> Dict:
         'animation': message.json.get('animation', {}).get('file_id', None)
     }
     log.info('method: get_params_for_message, params: %s', params)
-    return params_mapping(message.content_type, params)
+    params = params_mapping(message.content_type, params)
+    return params
 
 
 def escape(pattern):
     """ Escape special characters in a string. """
     _special_chars_map = {i: '\\' + chr(i) for i in b'()[]{}?*+-=|<_>^$\\&~#'}
+
     if isinstance(pattern, str):
         return pattern.translate(_special_chars_map)
-    else:
-        pattern = str(pattern, 'latin1')
-        return pattern.translate(_special_chars_map).encode('latin1')
 
-
-def parse_entities(text: str, entities: List[Dict]) -> str:
-    try:
-        log.info('parse_entities entry')
-        if not entities:
-            return text
-        entities.sort(key=lambda x: x.get('offset'))
-        counter = 0
-        emojis = []
-
-        for i, c in enumerate(text):
-            if ord(c) > 128512:
-                emojis.append(i)
-        for entity in entities:
-            print('___________\n'+text)
-            o = entity['offset'] + counter
-            l = entity['length']
-            if any(o > e for e in emojis):
-                o -= len([e for e in emojis if o > e])
-            elif any(o+l > e > o for e in emojis):
-                l -= len([e for e in emojis if o+l > e > o])
-            if entity['type'] in ('text_link', 'text_mention'):
-                if not entity.get('url', None):
-                    entity['url'] = f'tg://user?id={entity["user"]["id"]}'
-                text = text[:o]+'['+text[o:o+l]+']' + \
-                    f'({entity["url"]})'+text[o+l:]
-                counter += 4 + len(entity['url'])
-            elif entity['type'] == 'bold':
-                text = text[:o]+'*'+text[o:o+l]+'*'+text[o+l:]
-                counter += 2
-            elif entity['type'] == 'italic':
-                text = text[:o]+'_'+text[o:o+l]+'_'+text[o+l:]
-                counter += 2
-            elif entity['type'] == 'underline':
-                text = text[:o]+'__'+text[o:o+l]+'__'+text[o+l:]
-                counter += 4
-            elif entity['type'] == 'spoiler':
-                text = text[:o]+'||'+text[o:o+l]+'||'+text[o+l:]
-                counter += 4
-            elif entity['type'] == 'strikethrough':
-                text = text[:o]+'~'+text[o:o+l]+'~'+text[o+l:]
-                counter += 2
-            elif entity['type'] == 'pre':
-                text = text[:o]+'`'+text[o:o+l]+'`'+text[o+l:]
-                counter += 2
-            elif entity['type'] == 'code':
-                text = text[:o]+'```'+text[o:o+l]+'```'+text[o+l:]
-                counter += 6
-        return text
-    except Exception as e:
-        log.error(traceback.format_exc())
+    pattern = str(pattern, 'latin1')
+    return pattern.translate(_special_chars_map).encode('latin1')
 
 
 def entity_to_dict(self: MessageEntity):

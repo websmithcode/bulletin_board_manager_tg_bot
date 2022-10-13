@@ -1,9 +1,11 @@
-from telebot.types import Message, ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 from telebot.async_telebot import AsyncTeleBot
+from telebot.types import (KeyboardButton, Message, ReplyKeyboardMarkup,
+                           ReplyKeyboardRemove)
+from utils.database import AdminDatabase, TagDatabase
 from utils.logger import log
-from utils.database import TagDatabase, AdminDatabase
-from handlers.admin_configs import check_permissions
 from utils.states import MyStates
+
+from handlers.admin_configs import check_permissions
 
 db_admins = AdminDatabase()
 db_tags = TagDatabase()

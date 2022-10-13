@@ -7,7 +7,7 @@ class Commands:
     """ Commands class """
     @staticmethod
     def add_admin(args):
-        """ Add new admin to database 
+        """ Add new admin to database
             :param args: list of arguments
             :param args[2]: user_id
             :param args[3]: username

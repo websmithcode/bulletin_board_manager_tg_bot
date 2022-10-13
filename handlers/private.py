@@ -1,5 +1,4 @@
 """Модуль хендлеров приватных сообщений."""
-from os import remove
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
 from telebot.async_telebot import AsyncTeleBot
 from tinydb import Query
@@ -8,9 +7,7 @@ from utils.database import TagDatabase, AdminDatabase, memory as messages
 from handlers.admin_configs import (check_permissions,
                                     get_params_for_message,
                                     get_send_procedure,
-                                    string_builder,
-                                    calculate_offset)
-from utils.states import MyStates
+                                    string_builder)
 
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
