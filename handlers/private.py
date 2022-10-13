@@ -70,6 +70,11 @@ class DeclineCommands(Enum):
         'text': 'Хэштеги',
         'reason': 'Запрещено использование #хэштегов, они будут установлены автоматически.',
     }
+    VEILED = {
+        'command': get_decline_command('VEILED'),
+        'text': 'Завуалировано',
+        'reason': 'Непонятна суть предложения. Опишите подробнее ваш оффер.'
+    }
     OTHER = {
         'command': get_decline_command('OTHER'),
         'text': 'Другое',
