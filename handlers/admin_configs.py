@@ -233,7 +233,7 @@ def escape(pattern):
     return pattern.translate(_special_chars_map).encode('latin1')
 
 
-def entity_to_dict(self: MessageEntity):
+def entity_to_dict(self: MessageEntity):  # TODO: remove it
     return {"type": self.type,
             "offset": self.offset,
             "length": self.length,
@@ -243,6 +243,7 @@ def entity_to_dict(self: MessageEntity):
             "custom_emoji_id": self.custom_emoji_id}
 
 
+# TODO: Remove this
 def calculate_offset(increment, entities: List[MessageEntity]):
     for entity in entities:
         entity.offset += increment

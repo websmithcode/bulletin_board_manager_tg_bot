@@ -12,7 +12,7 @@ db_admins = AdminDatabase()
 db_messages = UnmarkedMessages()
 
 
-MessageEntity.to_dict = entity_to_dict
+MessageEntity.to_dict = entity_to_dict  # TODO: Remove it
 
 
 async def send_info_message(msg, bot: AsyncTeleBot):

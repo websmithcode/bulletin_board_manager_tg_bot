@@ -70,6 +70,11 @@ class DeclineCommands(Enum):
         'text': 'Хэштеги',
         'reason': 'Запрещено использование #хэштегов, они будут установлены автоматически.',
     }
+    OTHER = {
+        'command': get_decline_command('OTHER'),
+        'text': 'Другое',
+        'reason': 'Отклонено по личному усмотрению администратора.',
+    }
     CANCEL = {  # Cancel decline command
         'command': get_decline_command('CANCEL'),
         'text': '🚫 Отмена',
@@ -100,9 +105,11 @@ def get_hashtag_markup() -> InlineKeyboardMarkup:
         hashtag_button = InlineKeyboardButton(f'{hashtag.get("tag")}',
                                               callback_data=f'{hashtag.get("tag")}')
         hashtag_markup.add(hashtag_button)
-    end_button = InlineKeyboardButton('✅ Завершить выбор и отправить сообщение',
-                                      callback_data='end_button')
-    hashtag_markup.add(end_button)
+
+    hashtag_markup.add(InlineKeyboardButton('✅ Завершить выбор и отправить сообщение',
+                                            callback_data='end_button'))
+    hashtag_markup.add(InlineKeyboardButton('🚫 Отмена',
+                                            callback_data='/post_processing reset'))
     return hashtag_markup
 
 
@@ -214,6 +221,8 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
                                                 reply_markup=get_hashtag_markup())
         case 'decline':
             await decline_handler(call, bot)
+        case 'reset':
+            await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id, reply_markup=create_markup())
 
     log.info('method: on_post_processing '
              'message with chat_id %s and message_Id %s was accepted '

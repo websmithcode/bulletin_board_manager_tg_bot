@@ -14,7 +14,7 @@ from handlers.admin_configs import (cmd_add_hashtag,
                                     cmd_add_sign)
 
 
-from handlers.admin_commands import (get_commands_markup,
+from handlers.admin_commands import (on_send_new_post_to_group, get_commands_markup,
                                      on_button_choose,
                                      on_hashtag_add,
                                      on_sign_add,
@@ -53,6 +53,11 @@ class Bot(AsyncTeleBot):
             {
                 'callback': get_commands_markup,
                 'commands': ['start'],
+            },
+            {
+                'callback': on_send_new_post_to_group,
+                'state': MyStates.on_send_new_post_to_group,
+                'content_types': content_type_media,
             },
             {
                 'callback': on_button_choose,
