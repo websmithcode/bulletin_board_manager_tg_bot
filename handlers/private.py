@@ -27,7 +27,7 @@ def get_hashtag_markup() -> InlineKeyboardMarkup:
         hashtag_button = InlineKeyboardButton(f'{hashtag.get("tag")}',
                                               callback_data=f'{hashtag.get("tag")}')
         hashtag_markup.add(hashtag_button)
-    end_button = InlineKeyboardButton('Завершить выбор и отправить сообщение',
+    end_button = InlineKeyboardButton('✅ Завершить выбор и отправить сообщение',
                                       callback_data='end_button')
     hashtag_markup.add(end_button)
     return hashtag_markup

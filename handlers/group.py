@@ -32,8 +32,9 @@ def create_markup() -> InlineKeyboardButton:
         `InlineKeyboardButton`: Разметка сообщения
     """
     message_check_markup = InlineKeyboardMarkup()
-    accept_button = InlineKeyboardButton('Принять', callback_data='accept')
-    decline_button = InlineKeyboardButton('Отклонить', callback_data='decline')
+    accept_button = InlineKeyboardButton('✅ Принять', callback_data='accept')
+    decline_button = InlineKeyboardButton(
+        '❌ Отклонить', callback_data='decline')
     message_check_markup.add(accept_button, decline_button)
     return message_check_markup
 
