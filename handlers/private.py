@@ -1,16 +1,92 @@
 """Модуль хендлеров приватных сообщений."""
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
+import asyncio
+from enum import Enum
+
 from telebot.async_telebot import AsyncTeleBot
+from telebot.types import (CallbackQuery, InlineKeyboardButton,
+                           InlineKeyboardMarkup, Message)
 from tinydb import Query
+from utils.database import AdminDatabase, TagDatabase
+from utils.database import memory as messages
 from utils.logger import log
-from utils.database import TagDatabase, AdminDatabase, memory as messages
-from handlers.admin_configs import (check_permissions,
-                                    get_params_for_message,
-                                    get_send_procedure,
-                                    string_builder)
+
+from handlers.admin_configs import (check_permissions, get_params_for_message,
+                                    get_send_procedure, string_builder)
+from handlers.group import create_markup
 
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
+
+
+def get_decline_command(action: str) -> str:
+    """ Returns decline command from action """
+    return '/post_processing decline ' + action
+
+
+class DeclineCommands(Enum):
+    """ Enum of decline commands """
+    MAT = {
+        'command': get_decline_command('MAT'),
+        'text': 'Мат',
+        'reason': 'Запрещен мат и оскорбления.',
+    }
+    MORE_THAN_ONCE = {
+        'command': get_decline_command('MORE_THAN_ONCE'),
+        'text': 'Больше 1-го раза',
+        'reason': 'Запрещена реклама офферов более 1-го раза в неделю.',
+    }
+    LINK = {
+        'command': get_decline_command('LINK'),
+        'text': 'Ссылка',
+        'reason': 'Запрещены любые ссылки в объявлениях, ссылка для связи с вами будет добавлена автоматически.',
+    }
+    PHOTO_OR_FILE = {
+        'command': get_decline_command('PHOTO_OR_FILE'),
+        'text': 'Фото или файлы',
+        'reason': 'Запрещено прикрепление фото, видео, GIF и файлов.',
+    }
+    AUDIO_OR_VIDEO = {
+        'command': get_decline_command('AUDIO_OR_VIDEO'),
+        'text': 'Аудио или видеосообщение',
+        'reason': 'Запрещена отправка аудио- и видеосообщений.',
+    }
+    BOT = {
+        'command': get_decline_command('BOT'),
+        'text': 'Бот',
+        'reason': 'Запрещена любая реклама от ботов.',
+    }
+    ANIMATED_EMOJI = {
+        'command': get_decline_command('ANIMATED_EMOJI'),
+        'text': 'Анимированные emoji',
+        'reason': 'Запрещены анимированные emoji в тексте объявлений.',
+    }
+    MORE_THAN_FIVE_EMOJI = {
+        'command': get_decline_command('MORE_THAN_FIVE_EMOJI'),
+        'text': 'Более 5 emoji',
+        'reason': 'Запрещено использование более 5 emoji в объявлении.',
+    }
+    HASHTAGS = {
+        'command': get_decline_command('HASHTAGS'),
+        'text': 'Хэштеги',
+        'reason': 'Запрещено использование #хэштегов, они будут установлены автоматически.',
+    }
+    CANCEL = {  # Cancel decline command
+        'command': get_decline_command('CANCEL'),
+        'text': '🚫 Отмена',
+    }
+
+
+def get_decline_markup() -> InlineKeyboardMarkup:
+    """ Returns cecline markup with reasons of decline """
+
+    markup = InlineKeyboardMarkup()
+
+    for command in DeclineCommands:
+        markup.add(InlineKeyboardButton(
+            command.value['text'],
+            callback_data=command.value['command']
+        ))
+    return markup
 
 
 def get_hashtag_markup() -> InlineKeyboardMarkup:
@@ -45,6 +121,56 @@ async def on_error_message_reply(message: Message, bot: AsyncTeleBot):
     await get_send_procedure(message_type, bot)(**params)
 
 
+async def decline_handler(call: CallbackQuery, bot: AsyncTeleBot):
+    """ Decline handler
+
+    Args:
+        call (CallbackQuery): CallbackQuery object.
+        bot (AsyncTeleBot): Bot object.
+    """
+    log.info('Decline handler: %s', call.data)
+
+    decline_action = call.data.split(' ')[2] \
+        if len(call.data.split(' ')) > 2 \
+        else None
+
+    match decline_action:
+        case None:
+            decline_markup = get_decline_markup()
+            await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id,
+                                                reply_markup=decline_markup)
+            return
+        case 'CANCEL':
+            await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id,
+                                                reply_markup=create_markup())
+            return
+        case action:
+            decline_command = DeclineCommands[action] or None
+            if decline_command is None:
+                return
+
+            message_document = messages.get(Query().id == call.message.id)
+            html_text = string_builder(
+                message_document, remove_meta=False, add_sign=False)
+
+            content_type = 'text' if call.message.content_type == 'text' else 'caption'
+
+            edit_message_args = {
+                'chat_id': call.message.chat.id,
+                'message_id': call.message.id,
+                f'{content_type}': f'{html_text}'
+                '\n\n❌ОТКЛОНЕНО❌'
+                '\n<b>Причина:</b>'
+                f'\n{decline_command.value["reason"]}',
+            }
+            if call.message.content_type == 'text':
+                edit_message_args['disable_web_page_preview'] = True
+
+            edit_message = getattr(bot, f'edit_message_{content_type}')
+            await edit_message(**edit_message_args)
+            await send_decline_notification_to_group(decline_command.value['reason'], call, bot)
+
+
 async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
     """Хендлер принятия и отклонения новых сообщений.
 
@@ -57,20 +183,19 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
     if not check_permissions(call.from_user.id):
         return
 
-    action = call.data.replace('/post_processing ', '')
-
-    log.info('method: on_post_processing'
-             'message: callback data from callback query id %s is \'%s\'', call.id, action)
-    admin_user = db_admins.get_admin_by_id(call.from_user.id)
-    sign = admin_user.get('sign', '')
+    action = call.data.split(' ')[1]
 
     message = call.message
+
     html_text = message.html_text if message.content_type == 'text' else message.html_caption
+    admin_user = db_admins.get_admin_by_id(call.from_user.id)
+    sign = admin_user.get('sign', '')
 
     message_body = {
         **message.json,
         'html_text': html_text,
     }
+
     message_data = {
         'id': call.message.id,
         'body': message_body,
@@ -81,39 +206,19 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
     message_id = messages.insert(message_data)
     log.info('New message in db: %s', message_id)
 
-    # log.info(call)
-    if action == 'accept':
-        await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id,
-                                            reply_markup=get_hashtag_markup())
-        log.info('method: on_post_processing '
-                 'message with chat_id %s and message_Id %s was accepted '
-                 '%s, %s, %s',
-                 call.message.chat.id, call.message.id, call.id, action, call.message)
+    log.info('method: on_post_processing'
+             'message: callback data from callback query id %s is \'%s\'', call.id, action)
+    match action:
+        case 'accept':
+            await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id,
+                                                reply_markup=get_hashtag_markup())
+        case 'decline':
+            await decline_handler(call, bot)
 
-    elif action == 'decline':
-        #      string builder
-        content_type = 'text' if call.message.content_type == 'text' else 'caption'
-        message_document = messages.get(Query().id == call.message.id)
-        html_text = string_builder(
-            message_document, remove_meta=False, add_sign=False)
-
-        edit_message_args = {
-            'chat_id': call.message.chat.id,
-            'message_id': call.message.id,
-            f'{content_type}': f'{html_text}\n\n❌ОТКЛОНЕНО❌',
-        }
-        if call.message.content_type == 'text':
-            edit_message_args['disable_web_page_preview'] = True
-
-        edit_message = getattr(bot, f'edit_message_{content_type}')
-        await edit_message(**edit_message_args)
-
-        log.info(
-            'method: on_post_processing'
-            '%s with chat_id %s and message_Id %s was decline'
-            '%s, %s, %s',
-            content_type, call.message.chat.id, call.message.id, call.id, action, call.message
-        )
+    log.info('method: on_post_processing '
+             'message with chat_id %s and message_Id %s was accepted '
+             '%s, %s, %s',
+             call.message.chat.id, call.message.id, call.id, action, call.message)
 
 
 async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
@@ -125,9 +230,6 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     """
     log.info('method: on_hashtag_choose'
              'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
-    # if (call.message.text and call.message.text[0] != '#') \
-    #     or (call.message.caption and call.message.caption[0] != '#'):
-    #     call.data = call.data + '\n'
     msg = messages.get(Query().id == call.message.id)
 
     hashtag = call.data
@@ -175,8 +277,8 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
              call.id, call.data, call.message)
 
 
-async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
-    """Хендлер отправки сообщения в общую группу.
+async def send_post_to_group(call: CallbackQuery, bot: AsyncTeleBot):
+    """Хендлер отправки поста в общую группу.
 
     Args:
         `call (CallbackQuery)`: Объект callback'а.
@@ -202,3 +304,39 @@ async def send_message_to_group(call: CallbackQuery, bot: AsyncTeleBot):
     log.info('method: send_message_to_group'
              'message: message with id %s '
              'message: \'%s\' is sended', call.message.id, text_html)
+
+
+async def send_decline_notification_to_group(
+        reason_text: str, call: CallbackQuery, bot: AsyncTeleBot):
+    """Хендлер отправки поста в общую группу.
+
+    Args:
+        `call (CallbackQuery)`: Объект callback'а.
+        `bot (AsyncTeleBot)`: Объект бота.
+    """
+    log.info('call message from user: %s', call.from_user.username)
+
+    message = messages.get(Query().id == call.message.id)
+    sender_username = message['from_user'].username
+    moderator_username = call.from_user.username
+
+    # pylint: disable=line-too-long
+    text_html = f'❗️Уважаемый, @{sender_username}. Ваш пост отклонен модератором чата. Пожалуйста, ознакомьтесь с <a href="https://t.me/biznesschatt/847154">правилами</a> группы и попробуйте еще раз. Если у вас есть вопросы, обратитесь к <a href="https://t.me/{moderator_username}">администратору</a>. Спасибо за понимание.' \
+        "\n\n<b>Причина отклонения:</b>" \
+        f"\n{reason_text}"
+
+    msg = await bot.send_message(bot.config['CHAT_ID'], text_html, disable_web_page_preview=True)
+
+    await bot.edit_message_reply_markup(call.message.chat.id,
+                                        message_id=call.message.message_id,
+                                        reply_markup='')
+
+    removed_message_id = messages.remove(Query().id == call.message.id)
+    log.info('method: send_decline_notification_to_group,removed resulted message from query, message: %s',
+             removed_message_id)
+    log.info('method: send_decline_notification_to_group'
+             'message: message with id %s '
+             'message: \'%s\' is sended', call.message.id, text_html)
+
+    await asyncio.sleep(30)
+    await bot.delete_message(chat_id=msg.chat.id, message_id=msg.id)

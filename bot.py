@@ -6,7 +6,7 @@ from telebot import asyncio_filters
 from utils.states import MyStates
 from utils.logger import log
 from handlers.group import on_message_received
-from handlers.private import on_hashtag_choose, send_message_to_group, on_post_processing
+from handlers.private import on_hashtag_choose, send_post_to_group, on_post_processing
 from handlers.admin_configs import (cmd_add_hashtag,
                                     cmd_add_admin,
                                     cmd_remove_admin,
@@ -82,7 +82,7 @@ class Bot(AsyncTeleBot):
                 'func': lambda call: '#' in call.data
             },
             {
-                'callback': send_message_to_group,
+                'callback': send_post_to_group,
                 'func': lambda call: call.data == 'end_button'
             },
             {
