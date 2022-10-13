@@ -172,18 +172,21 @@ def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable:  # pyl
 
 def string_builder(message: Document, remove_meta=True, add_sign=True) -> str:
     try:
-        user: User = message.get('from_user')
         separator = '_'*15
+
+        user_id = message['from']['id']
+        username = message['from']['username']
         tags = ' '.join(list(message.get('tags') or []))
-        user_link_html = f'<a href="tg://user?id={user.id}">{user.username}</a>'
-        message_body = message.get('body')
+
+        message_body = message.get('body') or message
         message_html_text = message_body.get('html_text')
 
         if remove_meta:
             message_html_text = remove_meta_from_text(message_html_text)
 
-        text_html = f"{tags}"\
-            f"\n\n{message_html_text}"
+        user_link_html = f'<a href="tg://user?id={user_id}">{username}</a>'
+        text_html = f"{tags}" + \
+            (f"\n\n{message_html_text}" if message_html_text else '')
 
         if add_sign:
             text_html += "\n\nЕсли вас заинтересовало данное предложение напишите:\n"\

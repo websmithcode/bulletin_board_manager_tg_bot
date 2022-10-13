@@ -8,6 +8,7 @@ from telebot.types import (CallbackQuery, InlineKeyboardButton,
 from tinydb import Query
 from utils.database import AdminDatabase, TagDatabase
 from utils.database import memory as messages
+from utils.helpers import get_html_text_of_message, strip_hashtags
 from utils.logger import log
 
 from handlers.admin_configs import (check_permissions, get_params_for_message,
@@ -161,7 +162,7 @@ async def decline_handler(call: CallbackQuery, bot: AsyncTeleBot):
             if decline_command is None:
                 return
 
-            message_document = messages.get(Query().id == call.message.id)
+            message_document = messages.get(Query().msg_id == call.message.id)
             html_text = string_builder(
                 message_document, remove_meta=False, add_sign=False)
 
@@ -198,24 +199,21 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
     action = call.data.split(' ')[1]
 
     message = call.message
+    saved_message = messages.get(Query().msg_id == message.id)
 
-    html_text = message.html_text if message.content_type == 'text' else message.html_caption
     admin_user = db_admins.get_admin_by_id(call.from_user.id)
     sign = admin_user.get('sign', '')
 
-    message_body = {
-        **message.json,
-        'html_text': html_text,
-    }
-
     message_data = {
-        'id': call.message.id,
-        'body': message_body,
+        # 'id': call.message.id,
+        # 'body':
+        **saved_message,
         'sign': sign,
         'tags': None,
-        'from_user': call.from_user
+        # 'from_user': call.from_user
     }
-    message_id = messages.insert(message_data)
+    message_id = messages.update(
+        message_data, Query().msg_id == saved_message['msg_id'])
     log.info('New message in db: %s', message_id)
 
     log.info('method: on_post_processing'
@@ -244,7 +242,7 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     """
     log.info('method: on_hashtag_choose'
              'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
-    msg = messages.get(Query().id == call.message.id)
+    msg = messages.get(Query().msg_id == call.message.id)
 
     hashtag = call.data
     log.info('message: %s', msg)
@@ -263,8 +261,13 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
 
     log.info('update: %s', _)
 
-    message = messages.get(Query().id == call.message.id)
+    message = messages.get(Query().msg_id == call.message.id)
     log.info('\nBEFORE STRING BUILDER: %s', message)
+
+    # Remove hastags and space after hastags, before readding it
+    message['html_text'] = strip_hashtags(
+        get_html_text_of_message(call.message)).strip()
+
     html__text = string_builder(message, remove_meta=False, add_sign=False)
 
     if call.message.content_type == 'text':
@@ -301,10 +304,10 @@ async def send_post_to_group(call: CallbackQuery, bot: AsyncTeleBot):
     log.info('call message from user: %s', call.from_user.username)
     message_type = call.message.content_type
 
-    message = messages.get(Query().id == call.message.id)
-    text_html = string_builder(message)
+    message = messages.get(Query().msg_id == call.message.id)
+    html_text = string_builder(message)
 
-    params = get_params_for_message(text_html, call.message)
+    params = get_params_for_message(html_text, call.message)
     params['chat_id'] = bot.config['CHAT_ID']
 
     await get_send_procedure(message_type, bot)(**params)
@@ -317,7 +320,7 @@ async def send_post_to_group(call: CallbackQuery, bot: AsyncTeleBot):
              result)
     log.info('method: send_message_to_group'
              'message: message with id %s '
-             'message: \'%s\' is sended', call.message.id, text_html)
+             'message: \'%s\' is sended', call.message.id, html_text)
 
 
 async def send_decline_notification_to_group(
@@ -330,8 +333,8 @@ async def send_decline_notification_to_group(
     """
     log.info('call message from user: %s', call.from_user.username)
 
-    message = messages.get(Query().id == call.message.id)
-    sender_username = message['from_user'].username
+    message = messages.get(Query().msg_id == call.message.id)
+    sender_username = message['from']['username']
     moderator_username = call.from_user.username
 
     # pylint: disable=line-too-long

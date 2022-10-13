@@ -2,11 +2,17 @@
 import asyncio
 import json
 import traceback
-from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, MessageEntity
+
 from telebot.async_telebot import AsyncTeleBot
-from utils.logger import log
+from telebot.types import (InlineKeyboardButton, InlineKeyboardMarkup, Message,
+                           MessageEntity)
 from utils.database import AdminDatabase, UnmarkedMessages
-from handlers.admin_configs import get_params_for_message, get_send_procedure, entity_to_dict
+from utils.database import memory as messages
+from utils.helpers import get_html_text_of_message, get_message_text_type
+from utils.logger import log
+
+from handlers.admin_configs import (entity_to_dict, get_params_for_message,
+                                    get_send_procedure)
 
 db_admins = AdminDatabase()
 db_messages = UnmarkedMessages()
@@ -71,7 +77,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     message_type = message.content_type
 
     name = message.from_user.username if message.from_user.username else message.from_user.full_name
-    html_text = message.html_text if message.html_text else message.html_caption
+    html_text = get_html_text_of_message(message)
 
     log.info('method: on_message_received'
              'Received message: %s from %s, %s', html_text, name, message.from_user.id)
@@ -79,19 +85,26 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
 
     if message_type in ('text', 'photo', 'video', 'document', 'hashtag', 'animation'):
         user_link_html = f'From: <a href="tg://user?id={message.from_user.id}">{name}</a>'
-        new_html = html_text if html_text else ''
-        new_html += f"\n\n{'='*5} META {'='*5}"
-        new_html += f'\n{user_link_html}'
+        meta = f"\n\n{'='*5} META {'='*5}\n{user_link_html}"
 
-        params = get_params_for_message(new_html, message)
+        params = get_params_for_message(html_text, message)
         params['reply_markup'] = create_markup()
 
         for admin in db_admins.admins:
             params['chat_id'] = admin.get('id')
-            if params.get('html_text', None):
-                params['html_text'] = new_html
+            # if params.get('html_text', ''):
+            text_type = get_message_text_type(message)
+            params[f'{text_type}'] = html_text + meta
             try:
-                await get_send_procedure(message_type, bot)(**params)
+                msg = await get_send_procedure(message_type, bot)(**params)
+                msg_id = msg.message_id
+                message_json = message.json
+                message_json['msg_id'] = msg_id
+                message_json['html_text'] = get_html_text_of_message(message)
+                message_json['meta'] = meta
+
+                messages.insert(message_json)
+
             except Exception as ex:
                 log.error('Error sending procedure: %s, %s',
                           ex, traceback.format_exc())
