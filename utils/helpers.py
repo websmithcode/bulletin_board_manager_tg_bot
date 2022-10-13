@@ -14,6 +14,12 @@ def strip_hashtags(text: str) -> str:
     return re.sub(r"#(\w+)", "", text)
 
 
+def get_user_link(from_user: dict, text: str = None) -> str:
+    """Get user link"""
+    link_text = text or f'{from_user.get("first_name", "")} {from_user.get("last_name", "")}'
+    return f"<a href='tg://user?id={from_user['id']}'>{link_text}</a>"
+
+
 def get_message_text_type(message):
     """Get message text type"""
     if message.text:

@@ -8,7 +8,7 @@ from telebot.types import (InlineKeyboardButton, InlineKeyboardMarkup, Message,
                            MessageEntity)
 from utils.database import AdminDatabase, UnmarkedMessages
 from utils.database import memory as messages
-from utils.helpers import get_html_text_of_message, get_message_text_type
+from utils.helpers import get_html_text_of_message, get_message_text_type, get_user_link
 from utils.logger import log
 
 from handlers.admin_configs import (entity_to_dict, get_params_for_message,
@@ -84,7 +84,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
     log.info('method: on_message_received, full recieved message: %s', message.json)
 
     if message_type in ('text', 'photo', 'video', 'document', 'hashtag', 'animation'):
-        user_link_html = f'From: <a href="tg://user?id={message.from_user.id}">{name}</a>'
+        user_link_html = f'From: {get_user_link(message.json["from"])}'
         meta = f"\n\n{'='*5} META {'='*5}\n{user_link_html}"
 
         params = get_params_for_message(html_text, message)

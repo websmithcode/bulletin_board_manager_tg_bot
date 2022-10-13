@@ -8,7 +8,7 @@ from telebot.types import (CallbackQuery, InlineKeyboardButton,
 from tinydb import Query
 from utils.database import AdminDatabase, TagDatabase
 from utils.database import memory as messages
-from utils.helpers import get_html_text_of_message, strip_hashtags
+from utils.helpers import get_html_text_of_message, get_user_link, strip_hashtags
 from utils.logger import log
 
 from handlers.admin_configs import (check_permissions, get_params_for_message,
@@ -335,10 +335,11 @@ async def send_decline_notification_to_group(
 
     message = messages.get(Query().msg_id == call.message.id)
     sender_username = message['from']['username']
-    moderator_username = call.from_user.username
+    moderator_link = get_user_link(call.json['from'], 'администратору')
+    user_link = get_user_link(message['from'])
 
     # pylint: disable=line-too-long
-    text_html = f'❗️Уважаемый, @{sender_username}. Ваш пост отклонен модератором чата. Пожалуйста, ознакомьтесь с <a href="https://t.me/biznesschatt/847154">правилами</a> группы и попробуйте еще раз. Если у вас есть вопросы, обратитесь к <a href="https://t.me/{moderator_username}">администратору</a>. Спасибо за понимание.' \
+    text_html = f'❗️Уважаемый, {user_link}. Ваш пост отклонен модератором чата. Пожалуйста, ознакомьтесь с <a href="https://t.me/biznesschatt/847154">правилами</a> группы и попробуйте еще раз. Если у вас есть вопросы, обратитесь к {moderator_link}. Спасибо за понимание.' \
         "\n\n<b>Причина отклонения:</b>" \
         f"\n{reason_text}"
 

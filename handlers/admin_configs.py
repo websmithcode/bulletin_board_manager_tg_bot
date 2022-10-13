@@ -2,12 +2,13 @@
 import itertools
 import traceback
 from typing import Callable, Dict, List
-from tinydb.table import Document
+
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import Message, MessageEntity, User
-from utils.helpers import remove_meta_from_text
-from utils.logger import log
+from telebot.types import Message, MessageEntity
+from tinydb.table import Document
 from utils.database import AdminDatabase, TagDatabase
+from utils.helpers import get_user_link, remove_meta_from_text
+from utils.logger import log
 
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
@@ -175,7 +176,8 @@ def string_builder(message: Document, remove_meta=True, add_sign=True) -> str:
         separator = '_'*15
 
         user_id = message['from']['id']
-        username = message['from']['username']
+        username = message['from']['username'] \
+            or message['from']['first_name'] + message['from']['last_name']
         tags = ' '.join(list(message.get('tags') or []))
 
         message_body = message.get('body') or message
@@ -184,7 +186,7 @@ def string_builder(message: Document, remove_meta=True, add_sign=True) -> str:
         if remove_meta:
             message_html_text = remove_meta_from_text(message_html_text)
 
-        user_link_html = f'<a href="tg://user?id={user_id}">{username}</a>'
+        user_link_html = get_user_link(message['from'])
         text_html = f"{tags}" + \
             (f"\n\n{message_html_text}" if message_html_text else '')
 
