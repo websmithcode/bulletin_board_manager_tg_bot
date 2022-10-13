@@ -33,3 +33,9 @@ def get_html_text_of_message(message):
     if text_type:
         return getattr(message, f"html_{text_type}") or ""
     return ""
+
+
+def make_meta_string(from_user: dict) -> str:
+    user_link_html = f'From: {get_user_link(from_user)}'
+    meta = f"\n\n{'='*5} META {'='*5}\n{user_link_html}"
+    return meta

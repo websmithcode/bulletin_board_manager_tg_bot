@@ -8,7 +8,7 @@ from telebot.types import (CallbackQuery, InlineKeyboardButton,
 from tinydb import Query
 from utils.database import AdminDatabase, TagDatabase
 from utils.database import memory as messages
-from utils.helpers import get_html_text_of_message, get_user_link, strip_hashtags
+from utils.helpers import get_html_text_of_message, get_message_text_type, get_user_link, make_meta_string, strip_hashtags
 from utils.logger import log
 
 from handlers.admin_configs import (check_permissions, get_params_for_message,
@@ -225,7 +225,19 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
         case 'decline':
             await decline_handler(call, bot)
         case 'reset':
-            await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id, reply_markup=create_markup())
+            messages.update({'tags': None}, Query().msg_id == message.id)
+            meta = make_meta_string(saved_message['from'])
+            params = {
+                get_message_text_type(message): saved_message.get('html_text') + meta,
+                'chat_id': call.message.chat.id,
+                'message_id': call.message.id,
+                'reply_markup': create_markup(),
+            }
+            if message.content_type == 'text':
+                params['disable_web_page_preview'] = True
+            await getattr(bot, f'edit_message_{message.content_type}')(**params)
+
+            # await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id, reply_markup=create_markup())
 
     log.info('method: on_post_processing '
              'message with chat_id %s and message_Id %s was accepted '
@@ -334,7 +346,6 @@ async def send_decline_notification_to_group(
     log.info('call message from user: %s', call.from_user.username)
 
     message = messages.get(Query().msg_id == call.message.id)
-    sender_username = message['from']['username']
     moderator_link = get_user_link(call.json['from'], 'администратору')
     user_link = get_user_link(message['from'])
 
