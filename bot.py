@@ -75,19 +75,6 @@ class Bot(AsyncTeleBot):
                 'callback': on_message_received,
                 'content_types': content_type_media,
             },
-            # Query handlers
-            {
-                'callback': on_hashtag_choose,
-                'func': lambda call: '#' in call.data,
-            },
-            {
-                'callback': send_message_to_group,
-                'func': lambda call: call.data == 'end_button',
-            },
-            {
-                'callback': on_post_processing,
-                'func': lambda call: call.data in ('accept', 'decline', 'accept_error'),
-            }
         ]
         self.queries = [
             {
@@ -100,7 +87,7 @@ class Bot(AsyncTeleBot):
             },
             {
                 'callback': on_post_processing,
-                'func': lambda call: call.data in ('accept', 'decline', 'accept_error')
+                'func': lambda call: '/post_processing' in call.data
             },
         ]
 

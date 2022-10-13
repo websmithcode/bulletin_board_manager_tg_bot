@@ -57,8 +57,10 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
     if not check_permissions(call.from_user.id):
         return
 
+    action = call.data.replace('/post_processing ', '')
+
     log.info('method: on_post_processing'
-             'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
+             'message: callback data from callback query id %s is \'%s\'', call.id, action)
     admin_user = db_admins.get_admin_by_id(call.from_user.id)
     sign = admin_user.get('sign', '')
 
@@ -80,15 +82,15 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
     log.info('New message in db: %s', message_id)
 
     # log.info(call)
-    if call.data == 'accept':
+    if action == 'accept':
         await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id,
                                             reply_markup=get_hashtag_markup())
         log.info('method: on_post_processing '
                  'message with chat_id %s and message_Id %s was accepted '
                  '%s, %s, %s',
-                 call.message.chat.id, call.message.id, call.id, call.data, call.message)
+                 call.message.chat.id, call.message.id, call.id, action, call.message)
 
-    elif call.data == 'decline':
+    elif action == 'decline':
         #      string builder
         content_type = 'text' if call.message.content_type == 'text' else 'caption'
         message_document = messages.get(Query().id == call.message.id)
@@ -110,7 +112,7 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
             'method: on_post_processing'
             '%s with chat_id %s and message_Id %s was decline'
             '%s, %s, %s',
-            content_type, call.message.chat.id, call.message.id, call.id, call.data, call.message
+            content_type, call.message.chat.id, call.message.id, call.id, action, call.message
         )
 
 
