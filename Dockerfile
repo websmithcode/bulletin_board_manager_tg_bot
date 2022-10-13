@@ -1,7 +1,7 @@
 FROM python:3.10
 
 RUN mkdir /app 
-COPY . /app
+COPY app /app
 WORKDIR /app
 
 ENV PYTHONPATH=${PYTHONPATH}:${PWD} 

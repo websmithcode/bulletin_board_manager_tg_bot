@@ -1,4 +1,3 @@
-docker run --rm -d \
-      -v "${PWD}/db:/app/db" \
-      --mount type=bind,source="$(pwd)"/config.ini,target=/app/config.ini \
+docker run --rm $1 \
+      -v "${PWD}/app:/app/" \
        bulletin_bot
