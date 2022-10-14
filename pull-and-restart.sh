@@ -1,0 +1,1 @@
+docker stop $(docker ps -qa) && git pull && . ./run-prod.sh -d
