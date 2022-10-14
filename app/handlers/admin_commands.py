@@ -55,7 +55,7 @@ async def on_button_choose(message: Message, bot: AsyncTeleBot):
         await bot.send_message(message.chat.id, 'Через пробел напишите теги, которые вы хотите удалить.',
                                reply_markup=ReplyKeyboardMarkup(resize_keyboard=True).add(KeyboardButton('Отмена')))
         await on_list_of_hashtags(message, bot)
-    if message.text == 'Список хештегов':
+    if message.text == 'Список тегов':
         await on_list_of_hashtags(message, bot)
         await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
     if message.text == 'Отправить пост в группу':
