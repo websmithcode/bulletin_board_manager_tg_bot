@@ -1,5 +1,9 @@
 """Main run script"""
-from config import bot
+from utils.config import config
+from bot import Bot
+
+
+bot = Bot(config['Telegram'])
 
 
 def main():
