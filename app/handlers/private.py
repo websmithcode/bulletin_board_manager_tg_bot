@@ -1,6 +1,7 @@
 """Модуль хендлеров приватных сообщений."""
 import asyncio
 from enum import Enum
+from operator import itemgetter
 
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import (CallbackQuery, InlineKeyboardButton,
@@ -106,8 +107,9 @@ def get_hashtag_markup() -> InlineKeyboardMarkup:
     Returns:
         `InlineKeyboardMarkup`: Разметка сообщения
     """
+    hashtags = sorted(db_tags.tags, key=itemgetter('tag'))
     hashtag_markup = InlineKeyboardMarkup()
-    for hashtag in db_tags.tags:
+    for hashtag in hashtags:
         hashtag_button = InlineKeyboardButton(f'{hashtag.get("tag")}',
                                               callback_data=f'{hashtag.get("tag")}')
         hashtag_markup.add(hashtag_button)
