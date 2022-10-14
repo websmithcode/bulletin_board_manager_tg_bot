@@ -1,20 +1,19 @@
 """Модуль хендлеров приватных сообщений."""
-import asyncio
-from enum import Enum
-from operator import itemgetter
-
-from telebot.async_telebot import AsyncTeleBot
-from telebot.types import (CallbackQuery, InlineKeyboardButton,
-                           InlineKeyboardMarkup, Message)
-from tinydb import Query
-from utils.database import AdminDatabase, TagDatabase
-from utils.database import memory as messages
-from utils.helpers import edit_message, get_html_text_of_message, get_message_text_type, get_user_link, make_meta_string, strip_hashtags
-from utils.logger import log
-
+from handlers.group import create_markup
 from handlers.admin_configs import (check_permissions, get_params_for_message,
                                     get_send_procedure, string_builder)
-from handlers.group import create_markup
+from utils.logger import log
+from utils.helpers import edit_message, get_html_text_of_message, get_message_text_type, get_user_link, make_meta_string, strip_hashtags
+from utils.database import memory as messages
+from utils.database import AdminDatabase, TagDatabase
+from tinydb import Query
+from telebot.types import (CallbackQuery, InlineKeyboardButton,
+                           InlineKeyboardMarkup, Message)
+from telebot.async_telebot import AsyncTeleBot
+from operator import itemgetter
+from enum import Enum
+import asyncio
+
 
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
@@ -30,57 +29,57 @@ class DeclineCommands(Enum):
     MAT = {
         'command': get_decline_command('MAT'),
         'text': 'Мат',
-        'reason': 'Запрещен мат и оскорбления.',
+        'reason': 'Запрещен <b>мат</b> и оскорбления.',
     }
     MORE_THAN_ONCE = {
         'command': get_decline_command('MORE_THAN_ONCE'),
         'text': 'Больше 1-го раза',
-        'reason': 'Запрещена реклама офферов более 1-го раза в неделю.',
-    }
-    LINK = {
-        'command': get_decline_command('LINK'),
-        'text': 'Ссылка',
-        'reason': 'Запрещены любые ссылки в объявлениях, ссылка для связи с вами будет добавлена автоматически.',
+        'reason': 'Запрещена реклама офферов <b>более 1-го раза</b> в неделю.',
     }
     SCAM = {
         'command': get_decline_command('SCAM'),
         'text': 'Скам',
         'reason': 'Запрещена реклама развода и прочего <b>скама</b>.',
     }
+    LINK = {
+        'command': get_decline_command('LINK'),
+        'text': 'Ссылка',
+        'reason': 'Запрещены <b>любые ссылки</b> в объявлениях, ссылка для связи с вами будет добавлена автоматически.',
+    }
     PHOTO_OR_FILE = {
         'command': get_decline_command('PHOTO_OR_FILE'),
         'text': 'Фото или файлы',
-        'reason': 'Запрещено прикрепление фото, видео, GIF и файлов.',
+        'reason': 'Запрещено <b>прикрепление</b> фото, видео, GIF и файлов.',
     }
     AUDIO_OR_VIDEO = {
         'command': get_decline_command('AUDIO_OR_VIDEO'),
         'text': 'Аудио или видеосообщение',
-        'reason': 'Запрещена отправка аудио- и видеосообщений.',
+        'reason': 'Запрещена отправка <b>аудио</b>- и <b>видео</b>сообщений.',
     }
     BOT = {
         'command': get_decline_command('BOT'),
         'text': 'Бот',
-        'reason': 'Запрещена любая реклама от ботов.',
+        'reason': 'Запрещена любая <b>реклама от ботов</b>.',
     }
     ANIMATED_EMOJI = {
         'command': get_decline_command('ANIMATED_EMOJI'),
         'text': 'Анимированные emoji',
-        'reason': 'Запрещены анимированные emoji в тексте объявлений.',
+        'reason': 'Запрещены <b>анимированные emoji</b> в тексте объявлений.',
     }
     MORE_THAN_FIVE_EMOJI = {
         'command': get_decline_command('MORE_THAN_FIVE_EMOJI'),
         'text': 'Более 5 emoji',
-        'reason': 'Запрещено использование более 5 emoji в объявлении.',
+        'reason': 'Запрещено использование <b>более 5 emoji</b> в объявлении.',
     }
     HASHTAGS = {
         'command': get_decline_command('HASHTAGS'),
         'text': 'Хэштеги',
-        'reason': 'Запрещено использование #хэштегов, они будут установлены автоматически.',
+        'reason': 'Запрещено использование <b>#хэштегов</b>, они будут установлены автоматически.',
     }
     VEILED = {
         'command': get_decline_command('VEILED'),
         'text': 'Завуалировано',
-        'reason': 'Непонятна суть предложения. Опишите подробнее ваш оффер.'
+        'reason': '<b>Непонятна суть предложения</b>. Опишите подробнее ваш оффер.'
     }
     OTHER = {
         'command': get_decline_command('OTHER'),
