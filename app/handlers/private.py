@@ -1,19 +1,21 @@
 """Модуль хендлеров приватных сообщений."""
-from handlers.group import create_markup
-from handlers.admin_configs import (check_permissions, get_params_for_message,
-                                    get_send_procedure, string_builder)
-from utils.logger import log
-from utils.helpers import edit_message, get_html_text_of_message, get_message_text_type, get_user_link, make_meta_string, strip_hashtags
-from utils.database import memory as messages
-from utils.database import AdminDatabase, TagDatabase
-from tinydb import Query
+import asyncio
+from enum import Enum
+from operator import itemgetter
+
+from telebot.async_telebot import AsyncTeleBot
 from telebot.types import (CallbackQuery, InlineKeyboardButton,
                            InlineKeyboardMarkup, Message)
-from telebot.async_telebot import AsyncTeleBot
-from operator import itemgetter
-from enum import Enum
-import asyncio
+from tinydb import Query
+from utils.database import AdminDatabase, TagDatabase
+from utils.database import memory as messages
+from utils.helpers import (edit_message, get_html_text_of_message,
+                           get_user_link, make_meta_string, strip_hashtags)
+from utils.logger import log
 
+from handlers.admin_configs import (check_permissions, get_params_for_message,
+                                    get_send_procedure, string_builder)
+from handlers.group import create_markup
 
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
