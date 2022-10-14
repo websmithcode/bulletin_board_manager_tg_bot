@@ -1,8 +1,6 @@
-config.ini
 __pycache__
 .vscode/
-*.pdf
-db/*
-node_modules/
+app/db/*
 
+config.ini
 !.gitkeep
