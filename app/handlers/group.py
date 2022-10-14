@@ -8,7 +8,9 @@ from telebot.types import (InlineKeyboardButton, InlineKeyboardMarkup, Message,
                            MessageEntity)
 from utils.database import AdminDatabase, UnmarkedMessages
 from utils.database import memory as messages
-from utils.helpers import get_html_text_of_message, get_message_text_type, get_user_link, make_meta_string
+from utils.helpers import (edit_message, get_html_text_of_message, get_message_text_type,
+                           get_user_link, make_meta_string,
+                           message_text_filter)
 from utils.logger import log
 
 from handlers.admin_configs import (entity_to_dict, get_params_for_message,
@@ -91,18 +93,20 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
 
         for admin in db_admins.admins:
             params['chat_id'] = admin.get('id')
-            # if params.get('html_text', ''):
             text_type = get_message_text_type(message)
-            params[f'{text_type}'] = html_text + meta
+            params[f'{text_type}'] = message_text_filter(
+                html_text) + meta
             try:
                 msg = await get_send_procedure(message_type, bot)(**params)
                 msg_id = msg.message_id
                 message_json = message.json
                 message_json['msg_id'] = msg_id
-                message_json['html_text'] = get_html_text_of_message(message)
+                message_json['html_text'] = message_text_filter(
+                    get_html_text_of_message(message))
                 message_json['meta'] = meta
 
                 messages.insert(message_json)
+                edit_message(bot, msg, message_json['html_text'])
 
             except Exception as ex:
                 log.error('Error sending procedure: %s, %s',

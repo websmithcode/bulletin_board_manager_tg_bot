@@ -8,7 +8,7 @@ from telebot.types import (CallbackQuery, InlineKeyboardButton,
 from tinydb import Query
 from utils.database import AdminDatabase, TagDatabase
 from utils.database import memory as messages
-from utils.helpers import get_html_text_of_message, get_message_text_type, get_user_link, make_meta_string, strip_hashtags
+from utils.helpers import edit_message, get_html_text_of_message, get_message_text_type, get_user_link, make_meta_string, strip_hashtags
 from utils.logger import log
 
 from handlers.admin_configs import (check_permissions, get_params_for_message,
@@ -232,9 +232,8 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
             }
             if message.content_type == 'text':
                 params['disable_web_page_preview'] = True
-            await getattr(bot, f'edit_message_{message.content_type}')(**params)
 
-            # await bot.edit_message_reply_markup(call.from_user.id, call.message.message_id, reply_markup=create_markup())
+            await edit_message(bot, message, **params)
 
     log.info('method: on_post_processing '
              'message with chat_id %s and message_Id %s was accepted '
@@ -279,23 +278,8 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
 
     html__text = string_builder(message, remove_meta=False, add_sign=False)
 
-    if call.message.content_type == 'text':
-        await bot.edit_message_text(
-            text=html__text,
-            chat_id=call.message.chat.id,
-            message_id=call.message.id,
-            reply_markup=get_hashtag_markup(),
-            disable_web_page_preview=True
-        )
-
-    else:
-        # call.message.html_caption = call.message.html_caption or ''
-        await bot.edit_message_caption(
-            caption=html__text,
-            chat_id=call.message.chat.id,
-            message_id=call.message.id,
-            reply_markup=get_hashtag_markup(),
-        )
+    await edit_message(bot, call.message, html__text,
+                       reply_markup=get_hashtag_markup())
 
     log.info('method: on_hashtag_choose'
              'caption was edited, callback data from callback query'
