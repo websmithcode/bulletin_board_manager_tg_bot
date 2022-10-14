@@ -168,21 +168,12 @@ async def decline_handler(call: CallbackQuery, bot: AsyncTeleBot):
             html_text = string_builder(
                 message_document, remove_meta=False, add_sign=False)
 
-            content_type = 'text' if call.message.content_type == 'text' else 'caption'
+            new_text = f'{html_text}'\
+                '\n\n❌ОТКЛОНЕНО❌' \
+                '\n<b>Причина:</b>'\
+                f'\n{decline_command.value["reason"]}'
 
-            edit_message_args = {
-                'chat_id': call.message.chat.id,
-                'message_id': call.message.id,
-                f'{content_type}': f'{html_text}'
-                '\n\n❌ОТКЛОНЕНО❌'
-                '\n<b>Причина:</b>'
-                f'\n{decline_command.value["reason"]}',
-            }
-            if call.message.content_type == 'text':
-                edit_message_args['disable_web_page_preview'] = True
-
-            edit_message = getattr(bot, f'edit_message_{content_type}')
-            await edit_message(**edit_message_args)
+            await edit_message(bot, call.message, new_text)
             await send_decline_notification_to_group(decline_command.value['reason'], call, bot)
 
 
@@ -224,18 +215,12 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
         case 'decline':
             await decline_handler(call, bot)
         case 'reset':
+            log.info('Reset message %s', message.id)
             messages.update({'tags': None}, Query().msg_id == message.id)
             meta = make_meta_string(saved_message['from'])
-            params = {
-                get_message_text_type(message): saved_message.get('html_text') + meta,
-                'chat_id': call.message.chat.id,
-                'message_id': call.message.id,
-                'reply_markup': create_markup(),
-            }
-            if message.content_type == 'text':
-                params['disable_web_page_preview'] = True
+            new_text = saved_message.get('html_text') + meta
 
-            await edit_message(bot, message, **params)
+            await edit_message(bot, message, new_text, reply_markup=create_markup())
 
     log.info('method: on_post_processing '
              'message with chat_id %s and message_Id %s was accepted '
@@ -252,12 +237,12 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     """
     log.info('method: on_hashtag_choose'
              'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
-    msg = messages.get(Query().msg_id == call.message.id)
+    saved_message = messages.get(Query().msg_id == call.message.id)
 
     hashtag = call.data
-    log.info('message: %s', msg)
+    log.info('message: %s', saved_message)
 
-    tags = set(msg.get('tags') or [])
+    tags = set(saved_message.get('tags') or [])
     if hashtag not in tags:
         tags.add(hashtag)
     else:
@@ -267,7 +252,7 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
 
     log.info('tags: %s', str(tags))
 
-    _ = messages.update({'tags': tags}, doc_ids=[msg.doc_id])
+    _ = messages.update({'tags': tags}, doc_ids=[saved_message.doc_id])
 
     log.info('update: %s', _)
 
