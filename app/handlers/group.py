@@ -22,11 +22,11 @@ MessageEntity.to_dict = entity_to_dict  # TODO: Remove it
 
 
 async def send_info_message(msg, bot: AsyncTeleBot):
+    user_link = get_user_link(msg.json['from'])
     msg = await bot.send_message(msg.chat.id,
                                  'Спасибо за пост, '
-                                 f'[{msg.from_user.username}](tg://user?id={msg.from_user.id}), '
-                                 'он будет опубликован после проверки администратора.',
-                                 parse_mode='Markdown')
+                                 f'{user_link}, '
+                                 'он будет опубликован после проверки администратора.')
     await asyncio.sleep(15)
     await bot.delete_message(chat_id=msg.chat.id, message_id=msg.id)
 
