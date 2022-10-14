@@ -360,5 +360,5 @@ async def send_decline_notification_to_group(
              'message: message with id %s '
              'message: \'%s\' is sended', call.message.id, text_html)
 
-    await asyncio.sleep(30)
+    await asyncio.sleep(60)
     await bot.delete_message(chat_id=msg.chat.id, message_id=msg.id)

@@ -27,7 +27,7 @@ async def send_info_message(msg, bot: AsyncTeleBot):
                                  'Спасибо за пост, '
                                  f'{user_link}, '
                                  'он будет опубликован после проверки администратора.')
-    await asyncio.sleep(15)
+    await asyncio.sleep(30)
     await bot.delete_message(chat_id=msg.chat.id, message_id=msg.id)
 
 
