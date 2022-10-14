@@ -42,6 +42,11 @@ class DeclineCommands(Enum):
         'text': 'Ссылка',
         'reason': 'Запрещены любые ссылки в объявлениях, ссылка для связи с вами будет добавлена автоматически.',
     }
+    SCAM = {
+        'command': get_decline_command('SCAM'),
+        'text': 'Скам',
+        'reason': 'Запрещена реклама развода и прочего <b>скама</b>.',
+    }
     PHOTO_OR_FILE = {
         'command': get_decline_command('PHOTO_OR_FILE'),
         'text': 'Фото или файлы',
