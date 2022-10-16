@@ -183,6 +183,25 @@ async def decline_handler(call: CallbackQuery, bot: AsyncTeleBot):
             await send_decline_notification_to_group(decline_command.value['reason'], call, bot)
 
 
+async def accept_handler(call: CallbackQuery, bot: AsyncTeleBot):
+    """ Accept handler
+
+    Args:
+        call (CallbackQuery): CallbackQuery object.
+        bot (AsyncTeleBot): Bot object.
+    """
+    log.info('Accept handler: %s', call.data)
+
+    message_document = messages.get(Query().msg_id == call.message.id)
+    html_text = string_builder(
+        message_document, remove_meta=False, add_sign=False)
+
+    new_text = f'{html_text}'\
+        '\n\n✅ОДОБРЕНО✅'
+
+    await edit_message(bot, call.message, new_text)
+
+
 async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
     """Хендлер принятия и отклонения новых сообщений.
 
@@ -300,6 +319,7 @@ async def send_post_to_group(call: CallbackQuery, bot: AsyncTeleBot):
     await bot.edit_message_reply_markup(call.message.chat.id,
                                         message_id=call.message.message_id,
                                         reply_markup='')
+    await accept_handler(call, bot)
 
     result = messages.remove(Query().id == call.message.id)
     log.info('method: send_message_to_group,removed resulted message from query, message: %s',
