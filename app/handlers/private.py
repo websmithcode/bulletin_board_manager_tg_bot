@@ -320,11 +320,10 @@ async def send_decline_notification_to_group(
     log.info('call message from user: %s', call.from_user.username)
 
     message = messages.get(Query().msg_id == call.message.id)
-    moderator_link = get_user_link(call.json['from'], 'администратору')
     user_link = get_user_link(message['from'])
 
     # pylint: disable=line-too-long
-    text_html = f'❗️{user_link}, Ваш пост отклонен модератором чата. Пожалуйста, ознакомьтесь с <a href="https://t.me/biznesschatt/847154">правилами</a> группы и попробуйте еще раз. Если у вас есть вопросы, обратитесь к {moderator_link}. Спасибо за понимание.' \
+    text_html = f'❗️{user_link}, Ваш пост отклонен модератором чата. Пожалуйста, ознакомьтесь с <a href="https://t.me/biznesschatt/847154">правилами</a> группы и попробуйте еще раз. Если вы хотите опубликовать объявление в таком виде - воспользуйтесь <a href="https://t.me/biznesschatt/847192">платным размещением</a>.' \
         "\n\n<b>Причина отклонения:</b>" \
         f"\n{reason_text}"
 
