@@ -58,7 +58,8 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
         `message (Message)`: объект сообщения
         `bot (AsyncTeleBot)`: объект бота
     """
-    ignore_list_json = bot.config.get('CHATS_ID_IGNORE_LIST').replace("'", '"')
+    ignore_list_json = bot.config.get('CHATS_ID_IGNORE_LIST').replace(
+        "'", '"')  # TODO: Rename to whitelist
     chats_id_ingore_list = [
         str(chat_id)
         for chat_id
