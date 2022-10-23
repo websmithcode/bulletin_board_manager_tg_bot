@@ -42,7 +42,8 @@ def make_meta_string(from_user: dict) -> str:
 
 def strip_emails(text: str) -> str:
     """ Strip all emails from text """
-    return re.sub(r"\S+@\S+", "", text)
+    email_regex = r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+"
+    return re.sub(email_regex, "", text)
 
 
 def strip_mentions(text: str) -> str:
@@ -104,3 +105,4 @@ async def edit_message(bot: AsyncTeleBot, message: Message, new_text: str, **kwa
         params['disable_web_page_preview'] = True
 
     return await getattr(bot, f"edit_message_{message_text_type}")(**params)
+
