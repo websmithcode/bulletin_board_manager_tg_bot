@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 import re
+from tabnanny import verbose
 from typing import TYPE_CHECKING
 
 from telebot.types import KeyboardButton, Message, ReplyKeyboardMarkup
+
+from utils.premoderation.helpers import get_sender_of_message
 
 if TYPE_CHECKING:
     from bot import Bot
@@ -24,10 +27,17 @@ def remove_meta_from_text(text: str, meta_separator="===== META ====="):
     return text
 
 
-def get_user_link(from_user: dict, text: str = None) -> str:
+def get_user_link_from_message(message: Message) -> str:
+    """Get user link from message"""
+    sender = get_sender_of_message(message)
+    return get_user_link(sender)
+
+
+def get_user_link(sender: dict) -> str:
     """Get user link"""
-    link_text = text or f'{from_user.get("first_name", "")} {from_user.get("last_name", "")}'
-    return f"<a href='tg://user?id={from_user['id']}'>{link_text}</a>"
+    if sender.get('is_user'):
+        return f"<a href='tg://user?id={sender.get('chat_id')}'>{sender.get('verbose_name')}</a>"
+    return sender.get('verbose_name')
 
 
 def get_message_text_type(message):
@@ -45,9 +55,9 @@ def get_html_text_of_message(message):
     return ""
 
 
-def make_meta_string(from_user: dict) -> str:
+def make_meta_string(sender: dict) -> str:
     """ Make meta string with user data """
-    user_link_html = f'From\n{get_user_link(from_user)}'
+    user_link_html = f'From\n{get_user_link(sender)}'
     meta = f"\n\n{'='*5} META {'='*5}\n{user_link_html}"
     return meta
 

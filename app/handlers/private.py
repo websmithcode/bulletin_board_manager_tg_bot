@@ -11,8 +11,9 @@ from telebot.types import (CallbackQuery, InlineKeyboardButton,
 from tinydb import Query
 from utils.database import AdminDatabase, TagDatabase
 from utils.database import memory as messages
-from utils.helpers import (edit_message, get_html_text_of_message,
-                           get_user_link, make_meta_string, strip_hashtags)
+from utils.helpers import (get_user_link, edit_message,
+                           get_html_text_of_message, make_meta_string,
+                           strip_hashtags)
 from utils.logger import log
 
 from handlers.admin_configs import (build_html_text, check_permissions,
@@ -248,7 +249,7 @@ async def on_post_processing(call: CallbackQuery, bot: Bot):
         case 'reset':
             log.info('Reset message %s', message.id)
             messages.update({'tags': None}, Query().msg_id == message.id)
-            meta = make_meta_string(saved_message['from'])
+            meta = make_meta_string(saved_message['sender'])
             new_text = saved_message.get('html_text') + meta
 
             await edit_message(bot, message, new_text, reply_markup=create_markup())
@@ -346,7 +347,7 @@ async def send_decline_notification_to_group(
     log.info('call message from user: %s', call.from_user.username)
 
     message = messages.get(Query().msg_id == call.message.id)
-    user_link = get_user_link(message['from'])
+    user_link = get_user_link(message['sender'])
 
     # pylint: disable=line-too-long
     text_html = f'❗️{user_link}, Ваш пост отклонен модератором чата. Пожалуйста, ознакомьтесь с <a href="https://t.me/biznesschatt/847154">правилами</a> группы и попробуйте еще раз. Если вы хотите опубликовать объявление в таком виде - воспользуйтесь <a href="https://t.me/biznesschatt/847192">платным размещением</a>.' \

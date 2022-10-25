@@ -6,13 +6,13 @@ import traceback
 from typing import TYPE_CHECKING
 
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
-from utils.premoderation.helpers import get_sender_of_message
 from utils.database import AdminDatabase, UnmarkedMessages
 from utils.database import memory as messages
 from utils.helpers import (edit_message, get_html_text_of_message,
-                           get_message_text_type, get_user_link,
+                           get_message_text_type, get_user_link_from_message,
                            make_meta_string, message_text_filter)
 from utils.logger import log
+from utils.premoderation.helpers import get_sender_of_message
 
 from handlers.admin_configs import get_params_for_message, get_send_procedure
 
@@ -23,15 +23,14 @@ db_admins = AdminDatabase()
 db_messages = UnmarkedMessages()
 
 
-async def send_info_message(msg, bot: Bot):
+async def send_info_message(message: Message, bot: Bot):
     """Method for sending info message to group, when new message was send to moderator"""
-    user_link = get_user_link(msg.json['from'])
-    msg = await bot.send_message(msg.chat.id,
-                                 'Спасибо за пост, '
-                                 f'{user_link}, '
-                                 'он будет опубликован после проверки администратора.')
+    user_link = get_user_link_from_message(message)
+    message = await bot.send_message(message.chat.id,
+                                     f'Спасибо за пост, {user_link}, '
+                                     'он будет опубликован после проверки администратора.')
     await asyncio.sleep(30)
-    await bot.delete_message(chat_id=msg.chat.id, message_id=msg.id)
+    await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
 
 
 def create_markup() -> InlineKeyboardButton:
@@ -73,7 +72,7 @@ async def on_message_received(message: Message, bot: Bot):
     log.info('method: on_message_received, full recieved message: %s', message.json)
 
     if message_type in ('text', 'photo', 'video', 'document', 'hashtag', 'animation'):
-        meta = make_meta_string(message.json['from'])
+        meta = make_meta_string(sender)
 
         params = get_params_for_message(html_text, message)
         params['reply_markup'] = create_markup()
@@ -91,9 +90,12 @@ async def on_message_received(message: Message, bot: Bot):
                 message_json['html_text'] = message_text_filter(
                     get_html_text_of_message(message))
                 message_json['meta'] = meta
+                message_json['sender'] = get_sender_of_message(message)
 
                 messages.insert(message_json)
-                await edit_message(bot, msg, message_json['html_text'])
+
+                # TODO: remove to fix admin moderation
+                edit_message(bot, msg, message_json['html_text'])
 
             except Exception as ex:  # pylint: disable=broad-except
                 log.error('Error sending procedure: %s, %s',

@@ -189,7 +189,7 @@ def build_html_text(message: Document, remove_meta=True, add_sign=True) -> str |
         if remove_meta:
             message_html_text = remove_meta_from_text(message_html_text)
 
-        user_link_html = get_user_link(message['from'])
+        user_link_html = get_user_link(message['sender'])
         text_html = f"{tags}" + \
             (f"\n\n{message_html_text}" if message_html_text else '')
 
