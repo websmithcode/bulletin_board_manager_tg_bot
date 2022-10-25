@@ -94,9 +94,6 @@ async def on_message_received(message: Message, bot: Bot):
 
                 messages.insert(message_json)
 
-                # TODO: remove to fix admin moderation
-                edit_message(bot, msg, message_json['html_text'])
-
             except Exception as ex:  # pylint: disable=broad-except
                 log.error('Error sending procedure: %s, %s',
                           ex, traceback.format_exc())
