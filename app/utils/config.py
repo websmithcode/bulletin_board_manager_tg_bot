@@ -1,3 +1,4 @@
+"""Config module."""
 import configparser
 
 config = configparser.ConfigParser()

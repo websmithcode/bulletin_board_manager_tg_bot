@@ -1,13 +1,19 @@
 """ Helpers module """
+from __future__ import annotations
+
 import re
+from typing import TYPE_CHECKING
 
-from telebot.async_telebot import AsyncTeleBot
-from telebot.types import (KeyboardButton, Message, ReplyKeyboardMarkup)
+from telebot.types import KeyboardButton, Message, ReplyKeyboardMarkup
+
+if TYPE_CHECKING:
+    from bot import Bot
 
 
-def reply_keyboard_markup_from_list(list_of_items: list, one_time_keyboard: bool = False, resize_keyboard: bool = True):
+def reply_keyboard_markup_from_list(list_of_items: list, one_time_keyboard: bool = False,
+                                    resize_keyboard: bool = True):
     """Create reply keyboard markup from list"""
-    return ReplyKeyboardMarkup(resize_keyboard=resize_keyboard, one_time_keyboard=one_time_keyboard)\
+    return ReplyKeyboardMarkup(resize_keyboard, one_time_keyboard)\
         .add(*[KeyboardButton(button) for button in list_of_items])
 
 
@@ -98,7 +104,7 @@ def message_text_filter(html_text: str) -> str:
     return html_text.strip()
 
 
-async def edit_message(bot: AsyncTeleBot, message: Message, new_text: str, **kwargs):
+async def edit_message(bot: Bot, message: Message, new_text: str, **kwargs):
     """Edit message"""
     message_text_type = get_message_text_type(message)
     params = {

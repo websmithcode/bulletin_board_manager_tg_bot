@@ -1,29 +1,30 @@
 """Модуль групповых хендлеров"""
+from __future__ import annotations
+
 import asyncio
 import json
 import traceback
+from typing import TYPE_CHECKING
 
-from telebot.async_telebot import AsyncTeleBot
-from telebot.types import (InlineKeyboardButton, InlineKeyboardMarkup, Message,
-                           MessageEntity)
+from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 from utils.database import AdminDatabase, UnmarkedMessages
 from utils.database import memory as messages
-from utils.helpers import (edit_message, get_html_text_of_message, get_message_text_type,
-                           get_user_link, make_meta_string,
-                           message_text_filter)
+from utils.helpers import (edit_message, get_html_text_of_message,
+                           get_message_text_type, get_user_link,
+                           make_meta_string, message_text_filter)
 from utils.logger import log
 
-from handlers.admin_configs import (entity_to_dict, get_params_for_message,
-                                    get_send_procedure)
+from handlers.admin_configs import get_params_for_message, get_send_procedure
+
+if TYPE_CHECKING:
+    from bot import Bot
 
 db_admins = AdminDatabase()
 db_messages = UnmarkedMessages()
 
 
-MessageEntity.to_dict = entity_to_dict  # TODO: Remove it
-
-
-async def send_info_message(msg, bot: AsyncTeleBot):
+async def send_info_message(msg, bot: Bot):
+    """Method for sending info message to group, when new message was send to moderator"""
     user_link = get_user_link(msg.json['from'])
     msg = await bot.send_message(msg.chat.id,
                                  'Спасибо за пост, '
@@ -51,19 +52,18 @@ def create_markup() -> InlineKeyboardButton:
     return message_check_markup
 
 
-async def on_message_received(message: Message, bot: AsyncTeleBot):
+async def on_message_received(message: Message, bot: Bot):
     """Хендлер срабатывающий на сообщения в чате
 
     Args:
         `message (Message)`: объект сообщения
-        `bot (AsyncTeleBot)`: объект бота
+        `bot (Bot)`: объект бота
     """
-    ignore_list_json = bot.config.get('CHATS_ID_IGNORE_LIST').replace(
-        "'", '"')  # TODO: Rename to whitelist
+    whitelist_json = bot.config.get('CHATS_ID_WHITELIST').replace("'", '"')
     chats_id_ingore_list = [
         str(chat_id)
         for chat_id
-        in json.loads(ignore_list_json)
+        in json.loads(whitelist_json)
     ]
 
     if message.from_user.is_bot:
@@ -109,7 +109,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
                 messages.insert(message_json)
                 await edit_message(bot, msg, message_json['html_text'])
 
-            except Exception as ex:
+            except Exception as ex:  # pylint: disable=broad-except
                 log.error('Error sending procedure: %s, %s',
                           ex, traceback.format_exc())
 

@@ -4,11 +4,12 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 from utils.config import config
 
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-console_formatter = logging.Formatter(
-    "%(asctime)s - [%(levelname)s] - %(name)s - (%(filename)s).%(funcName)s(%(lineno)d) - %(message)s\n{}".format('_'*13))  # pylint: disable=consider-using-f-string
+FORMATTER_TEMPLATE = "%(asctime)s - [%(levelname)s] - %(name)s"\
+    " - (%(filename)s).%(funcName)s(%(lineno)d) - %(message)s\n{}"
+console_formatter = logging.Formatter(FORMATTER_TEMPLATE.format('_'*13))
 
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(console_formatter)

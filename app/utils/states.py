@@ -2,7 +2,7 @@
 from telebot.asyncio_handler_backends import State, StatesGroup
 
 
-class MyStates(StatesGroup):
+class MyStates(StatesGroup):  # pylint: disable=too-few-public-methods
     """ Just name variables differently """
     on_start_button_choose = State()  # creating instances of State class is enough from now
     on_hashtag_add = State()

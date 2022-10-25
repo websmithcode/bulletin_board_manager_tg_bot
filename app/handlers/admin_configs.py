@@ -1,14 +1,18 @@
 """Модуль различных хендлеров и вспомогательных методов."""
+from __future__ import annotations
+
 import itertools
 import traceback
-from typing import Callable, Dict, List
+from typing import TYPE_CHECKING, Callable, Dict
 
-from telebot.async_telebot import AsyncTeleBot
-from telebot.types import Message, MessageEntity
+from telebot.types import Message
 from tinydb.table import Document
 from utils.database import AdminDatabase, TagDatabase
 from utils.helpers import get_user_link, remove_meta_from_text
 from utils.logger import log
+
+if TYPE_CHECKING:
+    from bot import Bot
 
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
@@ -27,7 +31,7 @@ def check_permissions(user_id: int) -> bool:
     return user_id in [item['id'] for item in db_admins.admins]
 
 
-async def cmd_add_hashtag(message: Message, bot: AsyncTeleBot):
+async def cmd_add_hashtag(message: Message, bot: Bot):
     """Хендлер команды добавляющей хештег в базу.
 
     Args:
@@ -45,7 +49,7 @@ async def cmd_add_hashtag(message: Message, bot: AsyncTeleBot):
         await bot.reply_to(message, "Хештег добавлен!")
 
 
-async def cmd_add_admin(message: Message, bot: AsyncTeleBot):
+async def cmd_add_admin(message: Message, bot: Bot):
     """Хендлер команды добавляющей администратора в базу.
 
     Args:
@@ -70,7 +74,7 @@ async def cmd_add_admin(message: Message, bot: AsyncTeleBot):
     print(db_admins.admins)
 
 
-async def cmd_remove_admin(message: Message, bot: AsyncTeleBot):
+async def cmd_remove_admin(message: Message, bot: Bot):
     """Хендлер команды удаляющей администратора из базы.
 
     Args:
@@ -86,7 +90,7 @@ async def cmd_remove_admin(message: Message, bot: AsyncTeleBot):
         log.info('method: cmd_remove_admin, admin with id %s was deleted', text)
 
 
-async def cmd_remove_hashtag(message: Message, bot: AsyncTeleBot):
+async def cmd_remove_hashtag(message: Message, bot: Bot):
     """Хендлер команды удаляющей хештег из базы.
 
     Args:
@@ -103,7 +107,7 @@ async def cmd_remove_hashtag(message: Message, bot: AsyncTeleBot):
         await bot.reply_to(message, "Хештег удален!")
 
 
-async def cmd_add_sign(message: Message, bot: AsyncTeleBot):
+async def cmd_add_sign(message: Message, bot: Bot):
     """Хендлер команды добавляющей приписку к сообщению.
 
     Args:
@@ -121,7 +125,8 @@ async def cmd_add_sign(message: Message, bot: AsyncTeleBot):
                 if message.from_user.id == item['id']:
                     db_admins.update(item['id'], {'sign': text})
                     log.info(
-                        'method: cmd_add_sign, sign updated for %s, current sign: %s', item["id"], item["sign"])
+                        'method: cmd_add_sign, sign updated for %s, current sign: %s',
+                        item["id"], item["sign"])
 
 
 def params_mapping(message_type: str, params: Dict) -> Dict:
@@ -152,7 +157,7 @@ def params_mapping(message_type: str, params: Dict) -> Dict:
     return params
 
 
-def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable:  # pylint: disable=unused-argument
+def get_send_procedure(message_type: str, bot: Bot) -> Callable:  # pylint: disable=unused-argument
     """Метод возвращающий процедуру отправки сообщения на основе типа сообщения.
 
     Args:
@@ -171,7 +176,8 @@ def get_send_procedure(message_type: str, bot: AsyncTeleBot) -> Callable:  # pyl
     return func
 
 
-def string_builder(message: Document, remove_meta=True, add_sign=True) -> str:
+def build_html_text(message: Document, remove_meta=True, add_sign=True) -> str | None:
+    """Method for building html text from message."""
     try:
         separator = '_'*15
 
@@ -197,8 +203,9 @@ def string_builder(message: Document, remove_meta=True, add_sign=True) -> str:
         log.info('method: string_builder, text: %s', text_html)
 
         return text_html
-    except Exception:
+    except Exception:  # pylint: disable=broad-except
         log.error(traceback.format_exc())
+        return None
 
 
 def get_params_for_message(message_text: str, message: Message) -> Dict:
@@ -233,21 +240,3 @@ def escape(pattern):
 
     pattern = str(pattern, 'latin1')
     return pattern.translate(_special_chars_map).encode('latin1')
-
-
-def entity_to_dict(self: MessageEntity):  # TODO: remove it
-    return {"type": self.type,
-            "offset": self.offset,
-            "length": self.length,
-            "url": self.url,
-            "user": self.user.to_dict() if self.user else None,
-            "language":  self.language,
-            "custom_emoji_id": self.custom_emoji_id}
-
-
-# TODO: Remove this
-def calculate_offset(increment, entities: List[MessageEntity]):
-    for entity in entities:
-        entity.offset += increment
-    log.info('CALCULATE_OFFSET RETURN: %s', entities)
-    return entities

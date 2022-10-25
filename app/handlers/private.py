@@ -1,9 +1,11 @@
 """Модуль хендлеров приватных сообщений."""
+from __future__ import annotations
+
 import asyncio
 from enum import Enum
 from operator import itemgetter
+from typing import TYPE_CHECKING
 
-from telebot.async_telebot import AsyncTeleBot
 from telebot.types import (CallbackQuery, InlineKeyboardButton,
                            InlineKeyboardMarkup, Message)
 from tinydb import Query
@@ -13,9 +15,12 @@ from utils.helpers import (edit_message, get_html_text_of_message,
                            get_user_link, make_meta_string, strip_hashtags)
 from utils.logger import log
 
-from handlers.admin_configs import (check_permissions, get_params_for_message,
-                                    get_send_procedure, string_builder)
+from handlers.admin_configs import (build_html_text, check_permissions,
+                                    get_params_for_message, get_send_procedure)
 from handlers.group import create_markup
+
+if TYPE_CHECKING:
+    from bot import Bot
 
 db_tags = TagDatabase()
 db_admins = AdminDatabase()
@@ -46,7 +51,8 @@ class DeclineCommands(Enum):
     LINK = {
         'command': get_decline_command('LINK'),
         'text': 'Ссылка',
-        'reason': 'Запрещены <b>любые ссылки</b> в объявлениях, ссылка для связи с вами будет добавлена автоматически.',
+        'reason': 'Запрещены <b>любые ссылки</b> в объявлениях, ссылка для связи с вами будет"\
+            " добавлена автоматически.',
     }
     PHOTO_OR_FILE = {
         'command': get_decline_command('PHOTO_OR_FILE'),
@@ -127,7 +133,7 @@ def get_hashtag_markup() -> InlineKeyboardMarkup:
     return hashtag_markup
 
 
-async def on_error_message_reply(message: Message, bot: AsyncTeleBot):
+async def on_error_message_reply(message: Message, bot: Bot):
     """Хендлер, срабатывающий при ошибки парсинга/отправки сообщения.
 
     Args:
@@ -142,7 +148,7 @@ async def on_error_message_reply(message: Message, bot: AsyncTeleBot):
     await get_send_procedure(message_type, bot)(**params)
 
 
-async def decline_handler(call: CallbackQuery, bot: AsyncTeleBot):
+async def decline_handler(call: CallbackQuery, bot: Bot):
     """ Decline handler
 
     Args:
@@ -171,7 +177,7 @@ async def decline_handler(call: CallbackQuery, bot: AsyncTeleBot):
                 return
 
             message_document = messages.get(Query().msg_id == call.message.id)
-            html_text = string_builder(
+            html_text = build_html_text(
                 message_document, remove_meta=False, add_sign=False)
 
             new_text = f'{html_text}'\
@@ -183,7 +189,7 @@ async def decline_handler(call: CallbackQuery, bot: AsyncTeleBot):
             await send_decline_notification_to_group(decline_command.value['reason'], call, bot)
 
 
-async def accept_handler(call: CallbackQuery, bot: AsyncTeleBot):
+async def accept_handler(call: CallbackQuery, bot: Bot):
     """ Accept handler
 
     Args:
@@ -193,7 +199,7 @@ async def accept_handler(call: CallbackQuery, bot: AsyncTeleBot):
     log.info('Accept handler: %s', call.data)
 
     message_document = messages.get(Query().msg_id == call.message.id)
-    html_text = string_builder(
+    html_text = build_html_text(
         message_document, remove_meta=False, add_sign=False)
 
     new_text = f'{html_text}'\
@@ -202,7 +208,7 @@ async def accept_handler(call: CallbackQuery, bot: AsyncTeleBot):
     await edit_message(bot, call.message, new_text)
 
 
-async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
+async def on_post_processing(call: CallbackQuery, bot: Bot):
     """Хендлер принятия и отклонения новых сообщений.
 
     Args:
@@ -253,7 +259,7 @@ async def on_post_processing(call: CallbackQuery, bot: AsyncTeleBot):
              call.message.chat.id, call.message.id, call.id, action, call.message)
 
 
-async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
+async def on_hashtag_choose(call: CallbackQuery, bot: Bot):
     """Хендлер выбора хештегов новых сообщений.
 
     Args:
@@ -288,7 +294,7 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
     message['html_text'] = strip_hashtags(
         get_html_text_of_message(call.message)).strip()
 
-    html__text = string_builder(message, remove_meta=False, add_sign=False)
+    html__text = build_html_text(message, remove_meta=False, add_sign=False)
 
     await edit_message(bot, call.message, html__text,
                        reply_markup=get_hashtag_markup())
@@ -299,7 +305,7 @@ async def on_hashtag_choose(call: CallbackQuery, bot: AsyncTeleBot):
              call.id, call.data, call.message)
 
 
-async def send_post_to_group(call: CallbackQuery, bot: AsyncTeleBot):
+async def send_post_to_group(call: CallbackQuery, bot: Bot):
     """Хендлер отправки поста в общую группу.
 
     Args:
@@ -310,7 +316,7 @@ async def send_post_to_group(call: CallbackQuery, bot: AsyncTeleBot):
     message_type = call.message.content_type
 
     message = messages.get(Query().msg_id == call.message.id)
-    html_text = string_builder(message)
+    html_text = build_html_text(message)
 
     params = get_params_for_message(html_text, call.message)
     params['chat_id'] = bot.config['CHAT_ID']
@@ -330,7 +336,7 @@ async def send_post_to_group(call: CallbackQuery, bot: AsyncTeleBot):
 
 
 async def send_decline_notification_to_group(
-        reason_text: str, call: CallbackQuery, bot: AsyncTeleBot):
+        reason_text: str, call: CallbackQuery, bot: Bot):
     """Хендлер отправки поста в общую группу.
 
     Args:

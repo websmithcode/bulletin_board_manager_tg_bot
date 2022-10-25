@@ -1,24 +1,22 @@
 """ Bot class module """
 import asyncio
+
+from telebot import asyncio_filters
 from telebot.async_telebot import AsyncTeleBot
 from telebot.util import content_type_media
-from telebot import asyncio_filters
-from utils.states import MyStates
-from utils.logger import log
+
+from handlers.admin_commands import (START_BUTTONS, get_start_commands_markup,
+                                     on_hashtag_add, on_hashtag_delete,
+                                     on_send_new_post_to_group, on_sign_add,
+                                     on_start_button_choose)
+from handlers.admin_configs import (cmd_add_admin, cmd_add_hashtag,
+                                    cmd_add_sign, cmd_remove_admin,
+                                    cmd_remove_hashtag)
 from handlers.group import on_message_received
-from handlers.private import on_hashtag_choose, send_post_to_group, on_post_processing
-from handlers.admin_configs import (cmd_add_hashtag,
-                                    cmd_add_admin,
-                                    cmd_remove_admin,
-                                    cmd_remove_hashtag,
-                                    cmd_add_sign)
-
-
-from handlers.admin_commands import (START_BUTTONS, on_send_new_post_to_group, get_commands_markup,
-                                     on_start_button_choose,
-                                     on_hashtag_add,
-                                     on_sign_add,
-                                     on_hashtag_delete)
+from handlers.private import (on_hashtag_choose, on_post_processing,
+                              send_post_to_group)
+from utils.logger import log
+from utils.states import MyStates
 
 
 class Bot(AsyncTeleBot):
@@ -56,7 +54,7 @@ class Bot(AsyncTeleBot):
             },
             # Admin button handlers
             {
-                'callback': get_commands_markup,
+                'callback': get_start_commands_markup,
                 'commands': 'start',
                 'chat_types': 'private',
             },
