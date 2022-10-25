@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import traceback
 from typing import TYPE_CHECKING
 
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
+from utils.premoderation.helpers import get_sender_of_message
 from utils.database import AdminDatabase, UnmarkedMessages
 from utils.database import memory as messages
 from utils.helpers import (edit_message, get_html_text_of_message,
@@ -59,22 +59,8 @@ async def on_message_received(message: Message, bot: Bot):
         `message (Message)`: объект сообщения
         `bot (Bot)`: объект бота
     """
-    whitelist_json = bot.config.get('CHATS_ID_WHITELIST').replace("'", '"')
-    chats_id_ingore_list = [
-        str(chat_id)
-        for chat_id
-        in json.loads(whitelist_json)
-    ]
-
-    if message.from_user.is_bot:
-        if message.sender_chat is not None:
-            sender_chat_id = str(message.sender_chat.id)
-            if sender_chat_id in chats_id_ingore_list:
-                return
-        else:
-            return
-
-    if message.chat.type not in ('group', 'supergroup'):
+    sender = get_sender_of_message(message)
+    if sender['chat_id'] in bot.premoderation.whitelist:
         return
 
     message_type = message.content_type

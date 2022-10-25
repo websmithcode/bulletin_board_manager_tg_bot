@@ -16,6 +16,7 @@ from handlers.group import on_message_received
 from handlers.private import (on_hashtag_choose, on_post_processing,
                               send_post_to_group)
 from utils.logger import log
+from utils.premoderation.premoderation import Premoderation
 from utils.states import MyStates
 
 
@@ -105,6 +106,8 @@ class Bot(AsyncTeleBot):
                 'func': lambda call: '/post_processing' in call.data
             },
         ]
+
+        self.premoderation = Premoderation(self)
 
         self.init()
 
