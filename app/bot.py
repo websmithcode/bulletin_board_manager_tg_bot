@@ -31,49 +31,60 @@ class Bot(AsyncTeleBot):
             # Admin handlers
             {
                 'callback': cmd_remove_hashtag,
-                'commands': ['remove_hashtag']
+                'commands': 'remove_hashtag',
+                'chat_types': 'private',
             },
             {
                 'callback': cmd_remove_admin,
-                'commands': ['remove_admin']
+                'commands': 'remove_admin',
+                'chat_types': 'private',
             },
             {
                 'callback': cmd_add_admin,
-                'content_types': ['contact'],
+                'content_types': 'contact',
+                'chat_types': 'private',
             },
             {
                 'callback': cmd_add_hashtag,
-                'commands': ['add_hashtag'],
+                'commands': 'add_hashtag',
+                'chat_types': 'private',
             },
             {
                 'callback': cmd_add_sign,
-                'commands': ['add_sign'],
+                'commands': 'add_sign',
+                'chat_types': 'private',
             },
             # Admin button handlers
             {
                 'callback': get_commands_markup,
-                'commands': ['start'],
+                'commands': 'start',
+                'chat_types': 'private',
+            },
+            {
+                'callback': on_button_choose,
+                'state': MyStates.on_button_choose,
+                'chat_types': 'private',
+            },
+            {
+                'callback': on_hashtag_add,
+                'state': MyStates.on_hashtag_add,
+                'chat_types': 'private',
+            },
+            {
+                'callback': on_hashtag_delete,
+                'state': MyStates.on_hashtag_delete,
+                'chat_types': 'private',
+            },
+            {
+                'callback': on_sign_add,
+                'state': MyStates.on_sign_add,
+                'chat_types': 'private',
             },
             {
                 'callback': on_send_new_post_to_group,
                 'state': MyStates.on_send_new_post_to_group,
                 'content_types': content_type_media,
-            },
-            {
-                'callback': on_button_choose,
-                'state': MyStates.on_button_choose,
-            },
-            {
-                'callback': on_hashtag_add,
-                'state': MyStates.on_hashtag_add,
-            },
-            {
-                'callback': on_hashtag_delete,
-                'state': MyStates.on_hashtag_delete,
-            },
-            {
-                'callback': on_sign_add,
-                'state': MyStates.on_sign_add,
+                'chat_types': 'private',
             },
             # Basic handlers
             {

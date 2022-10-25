@@ -107,7 +107,7 @@ async def on_message_received(message: Message, bot: AsyncTeleBot):
                 message_json['meta'] = meta
 
                 messages.insert(message_json)
-                edit_message(bot, msg, message_json['html_text'])
+                await edit_message(bot, msg, message_json['html_text'])
 
             except Exception as ex:
                 log.error('Error sending procedure: %s, %s',
