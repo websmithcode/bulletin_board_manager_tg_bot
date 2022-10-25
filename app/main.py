@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Main run script"""
 from utils.config import config
 from bot import Bot
