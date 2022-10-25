@@ -59,7 +59,9 @@ async def on_message_received(message: Message, bot: Bot):
         `bot (Bot)`: объект бота
     """
     sender = get_sender_of_message(message)
-    if sender['chat_id'] in bot.premoderation.whitelist:
+
+    premoderation_result = bot.premoderation.process_message(message)
+    if premoderation_result.get('status') is bot.premoderation.Status.WHITELIST:
         return
 
     message_type = message.content_type
