@@ -14,8 +14,8 @@ from handlers.admin_configs import (cmd_add_hashtag,
                                     cmd_add_sign)
 
 
-from handlers.admin_commands import (on_send_new_post_to_group, get_commands_markup,
-                                     on_button_choose,
+from handlers.admin_commands import (START_BUTTONS, on_send_new_post_to_group, get_commands_markup,
+                                     on_start_button_choose,
                                      on_hashtag_add,
                                      on_sign_add,
                                      on_hashtag_delete)
@@ -61,9 +61,10 @@ class Bot(AsyncTeleBot):
                 'chat_types': 'private',
             },
             {
-                'callback': on_button_choose,
-                'state': MyStates.on_button_choose,
+                'callback': on_start_button_choose,
+                'state': MyStates.on_start_button_choose,
                 'chat_types': 'private',
+                'func': lambda message: message.text in START_BUTTONS
             },
             {
                 'callback': on_hashtag_add,

@@ -10,21 +10,17 @@ from handlers.admin_configs import check_permissions
 db_admins = AdminDatabase()
 db_tags = TagDatabase()
 
+START_BUTTONS = ['Добавить теги',
+                 'Удалить теги',
+                 'Список тегов',
+                 'Добавить подпись',
+                 'Отправить пост в группу']
 
-def create_commands_markup():
-    commands_markup = ReplyKeyboardMarkup(resize_keyboard=True)
-    add_hashtag_button = KeyboardButton('Добавить теги')
-    delete_hashtag_button = KeyboardButton('Удалить теги')
-    list_of_hashtags_button = KeyboardButton('Список тегов')
-    add_sign_button = KeyboardButton('Добавить подпись')
-    send_post_to_group_button = KeyboardButton('Отправить пост в группу')
-    # cancel_button = KeyboardButton('Отмена')
-    commands_markup.add(add_hashtag_button,
-                        delete_hashtag_button,
-                        add_sign_button,
-                        list_of_hashtags_button,
-                        send_post_to_group_button)
-    return commands_markup
+
+def create_start_commands_markup():
+    """ Create markup with commands """
+    return ReplyKeyboardMarkup(resize_keyboard=True)\
+        .add(*[KeyboardButton(button) for button in START_BUTTONS])
 
 
 hideBoard = ReplyKeyboardRemove()
@@ -36,11 +32,11 @@ async def get_commands_markup(message: Message, bot: AsyncTeleBot):
         await bot.send_message(message, "У вас нет прав на выполнение этой команды!")
     else:
         await bot.send_message(message.chat.id,
-                               text='Команды выведены.', reply_markup=create_commands_markup())
-        await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
+                               text='Команды выведены.', reply_markup=create_start_commands_markup())
+        await bot.set_state(message.from_user.id, MyStates.on_start_button_choose, message.chat.id)
 
 
-async def on_button_choose(message: Message, bot: AsyncTeleBot):
+async def on_start_button_choose(message: Message, bot: AsyncTeleBot):
     log.info('\nВыбор кнопки')
     if message.text == 'Добавить теги':
         await bot.set_state(message.from_user.id, MyStates.on_hashtag_add, message.chat.id)
@@ -57,7 +53,7 @@ async def on_button_choose(message: Message, bot: AsyncTeleBot):
         await on_list_of_hashtags(message, bot)
     if message.text == 'Список тегов':
         await on_list_of_hashtags(message, bot)
-        await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
+        await bot.set_state(message.from_user.id, MyStates.on_start_button_choose, message.chat.id)
     if message.text == 'Отправить пост в группу':
         await bot.set_state(message.from_user.id, MyStates.on_send_new_post_to_group, message.chat.id)
         await bot.send_message(message.chat.id, 'Напишите текст поста.',
@@ -71,8 +67,8 @@ async def on_decline(message: Message, bot: AsyncTeleBot):
     Cancel state
     """
     log.info('\nОтмена произведена')
-    await bot.send_message(message.chat.id, 'Действие отменено.', reply_markup=create_commands_markup())
-    await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
+    await bot.send_message(message.chat.id, 'Действие отменено.', reply_markup=create_start_commands_markup())
+    await bot.set_state(message.from_user.id, MyStates.on_start_button_choose, message.chat.id)
 
 
 async def on_hashtag_add(message: Message, bot: AsyncTeleBot):
@@ -85,8 +81,8 @@ async def on_hashtag_add(message: Message, bot: AsyncTeleBot):
             # prepare hastag. If not starts with #, add it, or strip extra #
             hashtag = "#" + hashtag.replace('#', '')
             db_tags.tags = hashtag
-        await bot.send_message(message.chat.id, "Хештег добавлен!", reply_markup=create_commands_markup())
-        await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
+        await bot.send_message(message.chat.id, "Хештег добавлен!", reply_markup=create_start_commands_markup())
+        await bot.set_state(message.from_user.id, MyStates.on_start_button_choose, message.chat.id)
 
 
 async def on_hashtag_delete(message: Message, bot: AsyncTeleBot):
@@ -99,8 +95,8 @@ async def on_hashtag_delete(message: Message, bot: AsyncTeleBot):
             # prepare hastag. If not starts with #, add it, or strip extra #
             hashtag = "#" + hashtag.replace('#', '')
             db_tags.remove_tag(hashtag)
-        await bot.send_message(message.chat.id, "Хештег удален!", reply_markup=create_commands_markup())
-        await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
+        await bot.send_message(message.chat.id, "Хештег удален!", reply_markup=create_start_commands_markup())
+        await bot.set_state(message.from_user.id, MyStates.on_start_button_choose, message.chat.id)
 
 
 async def on_list_of_hashtags(message: Message, bot: AsyncTeleBot):
@@ -119,8 +115,8 @@ async def on_sign_add(message: Message, bot: AsyncTeleBot):
         for item in db_admins.admins:
             if message.from_user.id == item['id']:
                 db_admins.update(item['id'], {'sign': message.html_text})
-        await bot.send_message(message.chat.id, 'Примечание обновлено.', reply_markup=create_commands_markup())
-        await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
+        await bot.send_message(message.chat.id, 'Примечание обновлено.', reply_markup=create_start_commands_markup())
+        await bot.set_state(message.from_user.id, MyStates.on_start_button_choose, message.chat.id)
 
 
 async def on_send_new_post_to_group(message: Message, bot: AsyncTeleBot):
@@ -131,7 +127,7 @@ async def on_send_new_post_to_group(message: Message, bot: AsyncTeleBot):
     if not check_permissions(message.from_user.id):
         return
 
-    await bot.set_state(message.from_user.id, MyStates.on_button_choose, message.chat.id)
+    await bot.set_state(message.from_user.id, MyStates.on_start_button_choose, message.chat.id)
 
     if message.text == 'Отмена':
         await on_decline(message, bot)
@@ -139,4 +135,4 @@ async def on_send_new_post_to_group(message: Message, bot: AsyncTeleBot):
 
     await bot.copy_message(bot.config['CHAT_ID'], message.chat.id, message.message_id)
     await bot.send_message(message.chat.id, 'Пост отправлен в группу.',
-                           reply_markup=create_commands_markup())
+                           reply_markup=create_start_commands_markup())
