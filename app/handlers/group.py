@@ -23,12 +23,13 @@ db_admins = AdminDatabase()
 db_messages = UnmarkedMessages()
 
 
-async def send_info_message(message: Message, bot: Bot):
+async def send_info_message(message: Message, bot: Bot, text=None):
     """Method for sending info message to group, when new message was send to moderator"""
     user_link = get_user_link_from_message(message)
-    message = await bot.send_message(message.chat.id,
-                                     f'Спасибо за пост, {user_link}, '
-                                     'он будет опубликован после проверки администратора.')
+    text = text or f'Спасибо за пост, {user_link}, ' \
+        'он будет опубликован после проверки администратора.'
+
+    message = await bot.send_message(message.chat.id, text)
     await asyncio.sleep(30)
     await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
 
@@ -60,6 +61,11 @@ async def on_message_received(message: Message, bot: Bot):
     """
     premoderation_result = bot.premoderation.process_message(message)
     if premoderation_result.get('status') is bot.premoderation.Status.WHITELIST:
+        return
+
+    if premoderation_result.get('status') is bot.premoderation.Status.DECLINE:
+        await bot.delete_message(message.chat.id, message.message_id)
+        await send_info_message(message, bot, premoderation_result.get('reason'))
         return
 
     name = message.from_user.username if message.from_user.username else message.from_user.full_name

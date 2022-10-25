@@ -43,3 +43,41 @@ def sender_is_group_or_channel(message: Message):
 def sender_is_user(message: Message):
     """Check if sender of message is user."""
     return message.from_user and not message.from_user.is_bot
+
+
+def get_message_text_type(message: Message) -> str:
+    """Get message text type"""
+    if message.text:
+        return "text"
+    return "caption"
+
+
+def get_text_of_message(message: Message) -> str:
+    """Get text of message"""
+    text_type = get_message_text_type(message)
+    if text_type:
+        return getattr(message, text_type) or ""
+    return ""
+
+
+def get_html_text_of_message(message: Message) -> str:
+    """Get html text of message"""
+    text_type = get_message_text_type(message)
+    if text_type:
+        return getattr(message, f"html_{text_type}") or ""
+    return ""
+
+
+def get_user_link_from_message(message: Message) -> str:
+    """Get user link from message"""
+    sender = get_sender_of_message(message)
+    return get_user_link(sender)
+
+
+def get_user_link(sender: dict | int, text: None | str = None) -> str:
+    """Get user link"""
+    text = text or sender['verbose_name']
+    chat_id = sender['chat_id'] if isinstance(sender, dict) else sender
+    if sender.get('is_user'):
+        return f"<a href='tg://user?id={chat_id}'>{text}</a>"
+    return text

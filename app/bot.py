@@ -28,7 +28,7 @@ class Bot(AsyncTeleBot):
         self.config = config
         super().__init__(self.config['TOKEN'], **kwargs, parse_mode='HTML')
 
-        self.premoderation = Premoderation(self)
+        self.premoderation = Premoderation(self, log)
         self.premoderation.limit_caption(1024-325)
         self.premoderation.limit_text(4096-325)
 
