@@ -1,6 +1,7 @@
 from telebot.async_telebot import AsyncTeleBot
 from telebot.types import (KeyboardButton, Message, ReplyKeyboardMarkup,
                            ReplyKeyboardRemove)
+from utils.helpers import reply_keyboard_markup_from_list
 from utils.database import AdminDatabase, TagDatabase
 from utils.logger import log
 from utils.states import MyStates
@@ -19,8 +20,7 @@ START_BUTTONS = ['Добавить теги',
 
 def create_start_commands_markup():
     """ Create markup with commands """
-    return ReplyKeyboardMarkup(resize_keyboard=True)\
-        .add(*[KeyboardButton(button) for button in START_BUTTONS])
+    return reply_keyboard_markup_from_list(START_BUTTONS)
 
 
 hideBoard = ReplyKeyboardRemove()

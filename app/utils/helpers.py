@@ -2,7 +2,13 @@
 import re
 
 from telebot.async_telebot import AsyncTeleBot
-from telebot.types import Message
+from telebot.types import (KeyboardButton, Message, ReplyKeyboardMarkup)
+
+
+def reply_keyboard_markup_from_list(list_of_items: list, one_time_keyboard: bool = False, resize_keyboard: bool = True):
+    """Create reply keyboard markup from list"""
+    return ReplyKeyboardMarkup(resize_keyboard=resize_keyboard, one_time_keyboard=one_time_keyboard)\
+        .add(*[KeyboardButton(button) for button in list_of_items])
 
 
 def remove_meta_from_text(text: str, meta_separator="===== META ====="):
@@ -105,4 +111,3 @@ async def edit_message(bot: AsyncTeleBot, message: Message, new_text: str, **kwa
         params['disable_web_page_preview'] = True
 
     return await getattr(bot, f"edit_message_{message_text_type}")(**params)
-
