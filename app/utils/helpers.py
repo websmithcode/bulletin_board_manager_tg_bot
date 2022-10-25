@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import re
-from tabnanny import verbose
 from typing import TYPE_CHECKING
 
 from telebot.types import KeyboardButton, Message, ReplyKeyboardMarkup
@@ -33,11 +32,13 @@ def get_user_link_from_message(message: Message) -> str:
     return get_user_link(sender)
 
 
-def get_user_link(sender: dict) -> str:
+def get_user_link(sender: dict | int, text: None | str = None) -> str:
     """Get user link"""
+    text = text or sender['verbose_name']
+    chat_id = sender['chat_id'] if isinstance(sender, dict) else sender
     if sender.get('is_user'):
-        return f"<a href='tg://user?id={sender.get('chat_id')}'>{sender.get('verbose_name')}</a>"
-    return sender.get('verbose_name')
+        return f"<a href='tg://user?id={chat_id}'>{text}</a>"
+    return text
 
 
 def get_message_text_type(message):

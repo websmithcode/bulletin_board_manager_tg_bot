@@ -15,6 +15,7 @@ from handlers.admin_configs import (cmd_add_admin, cmd_add_hashtag,
 from handlers.group import on_message_received
 from handlers.private import (on_hashtag_choose, on_post_processing,
                               send_post_to_group)
+from utils.helpers import get_user_link
 from utils.logger import log
 from utils.premoderation.premoderation import Premoderation
 from utils.states import MyStates
@@ -159,3 +160,20 @@ class Bot(AsyncTeleBot):
             non_stop=True,
             skip_pending=True
         ))
+
+    class Strings:
+        """ String templates """
+        @staticmethod
+        def rules_link(text: str) -> str:
+            """ Rules link template """
+            return f'<a href="https://t.me/biznesschatt/847154">{text}</a>'
+
+        @staticmethod
+        def sponsored_link(text: str) -> str:
+            """ Sponsored link template """
+            return '<a href="https://t.me/biznesschatt/847192">{text}</a>'
+
+        @staticmethod
+        def moder_link(text: str) -> str:
+            """ Moder link template """
+            return get_user_link(839959042, text)

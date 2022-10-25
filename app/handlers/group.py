@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
 from utils.database import AdminDatabase, UnmarkedMessages
 from utils.database import memory as messages
-from utils.helpers import (edit_message, get_html_text_of_message,
-                           get_message_text_type, get_user_link_from_message,
-                           make_meta_string, message_text_filter)
+from utils.helpers import (get_html_text_of_message, get_message_text_type,
+                           get_user_link_from_message, make_meta_string,
+                           message_text_filter)
 from utils.logger import log
 from utils.premoderation.helpers import get_sender_of_message
 
@@ -58,13 +58,9 @@ async def on_message_received(message: Message, bot: Bot):
         `message (Message)`: объект сообщения
         `bot (Bot)`: объект бота
     """
-    sender = get_sender_of_message(message)
-
     premoderation_result = bot.premoderation.process_message(message)
     if premoderation_result.get('status') is bot.premoderation.Status.WHITELIST:
         return
-
-    message_type = message.content_type
 
     name = message.from_user.username if message.from_user.username else message.from_user.full_name
     html_text = get_html_text_of_message(message)
@@ -73,8 +69,8 @@ async def on_message_received(message: Message, bot: Bot):
              'Received message: %s from %s, %s', html_text, name, message.from_user.id)
     log.info('method: on_message_received, full recieved message: %s', message.json)
 
-    if message_type in ('text', 'photo', 'video', 'document', 'hashtag', 'animation'):
-        meta = make_meta_string(sender)
+    if message.content_type in ('text', 'photo', 'video', 'document', 'hashtag', 'animation'):
+        meta = make_meta_string(get_sender_of_message(message))
 
         params = get_params_for_message(html_text, message)
         params['reply_markup'] = create_markup()
@@ -82,13 +78,11 @@ async def on_message_received(message: Message, bot: Bot):
         for admin in db_admins.admins:
             params['chat_id'] = admin.get('id')
             text_type = get_message_text_type(message)
-            params[f'{text_type}'] = message_text_filter(
-                html_text) + meta
+            params[f'{text_type}'] = message_text_filter(html_text) + meta
             try:
-                msg = await get_send_procedure(message_type, bot)(**params)
-                msg_id = msg.message_id
+                msg = await get_send_procedure(message.content_type, bot)(**params)
                 message_json = message.json
-                message_json['msg_id'] = msg_id
+                message_json['msg_id'] = msg.message_id
                 message_json['html_text'] = message_text_filter(
                     get_html_text_of_message(message))
                 message_json['meta'] = meta
@@ -97,24 +91,28 @@ async def on_message_received(message: Message, bot: Bot):
                 messages.insert(message_json)
 
             except Exception as ex:  # pylint: disable=broad-except
+                # log.error('method: on_message_received, error: %s', exc)
+                # log.error(
+                #     'method: on_message_received, traceback: %s', traceback.format_exc())
+                # admin_link = bot.Strings.moder_link('администратору')
+                # msg = await bot.send_message(message.chat.id,
+                #                              f'Обнаружена ощибка, сообщение не было отправлено. Обратитесь к {admin_link}.')
+
                 log.error('Error sending procedure: %s, %s',
                           ex, traceback.format_exc())
 
                 ex_msg = ("ВНИМАНИЕ! "
                           "ПРИ АВТОМАТИЧЕСКОЙ ОБРАБОТКИ ЭТОГО СООБЩЕНИЯ ПРОИЗОШЛА ОШИБКА!!!\n"
                           "ОБРАБОТАЙТЕ В РУЧНОМ РЕЖИМЕ\n\n")
-                ex_suffix = "\n\nОТПРАВЬТЕ ПРАВИЛЬНЫЙ ТЕКСТ ОТВЕТОМ НА ЭТО СООБЩЕНИЕ"
 
                 if params.get('text', None):
                     params['text'] = ex_msg +\
-                        (message.text if message.text else message.caption) +\
-                        ex_suffix
+                        (message.text if message.text else message.caption)
                 elif params.get('caption', None):
                     params['caption'] = ex_msg +\
-                        (message.text if message.text else message.caption) +\
-                        ex_suffix
+                        (message.text if message.text else message.caption)
 
-                await get_send_procedure(message_type, bot)(**params)
+                await get_send_procedure(message.content_type, bot)(**params)
 
             log.info('method: on_message_received, '
                      'called for admin_id %s with params: %s',

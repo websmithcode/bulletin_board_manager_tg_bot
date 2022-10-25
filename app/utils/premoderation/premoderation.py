@@ -7,7 +7,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from telebot.types import Message
-from utils.premoderation.handlers.whitelist import WhiteList
+from utils.premoderation.handlers import WhiteList
 
 if TYPE_CHECKING:
     from bot import Bot
