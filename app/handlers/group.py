@@ -6,7 +6,7 @@ import traceback
 from typing import TYPE_CHECKING
 
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
-from utils.database import AdminDatabase, UnmarkedMessages
+from utils.database import AdminDatabase
 from utils.database import memory as messages
 from utils.helpers import (get_html_text_of_message, get_message_text_type,
                            get_user_link_from_message, make_meta_string,
@@ -20,7 +20,6 @@ if TYPE_CHECKING:
     from bot import Bot
 
 db_admins = AdminDatabase()
-db_messages = UnmarkedMessages()
 
 
 async def send_info_message(message: Message, bot: Bot, text=None, timeout=30):
