@@ -180,7 +180,7 @@ async def on_error_message_reply(message: Message, bot: Bot):
     await get_send_procedure(message_type, bot)(**params)
 
 
-async def delete_post_in_private_handler(call: CallbackQuery, bot: Bot, timeout: int = 30):
+async def delete_post_in_private_handler(call: CallbackQuery, bot: Bot, timeout: int = 10):
     """Handler, which deletes post in private chat"""
     chat_id = call.message.chat.id
     message_id = call.message.message_id
