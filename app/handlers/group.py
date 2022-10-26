@@ -6,7 +6,8 @@ import traceback
 from typing import TYPE_CHECKING
 
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
-from utils.database import AdminDatabase
+from datetime import datetime
+from utils.database import AdminDatabase, CalledPublicCommands, TagDatabase
 from utils.database import memory as messages
 from utils.helpers import (get_html_text_of_message, get_message_text_type,
                            get_user_link_from_message, make_meta_string,
@@ -51,6 +52,30 @@ def create_markup() -> InlineKeyboardButton:
         '❌ Отклонить', callback_data=command('decline'))
     message_check_markup.add(accept_button, decline_button)
     return message_check_markup
+
+
+async def on_group_show_hashtags(message: Message, bot: Bot):
+    """ Send hashtags to group """
+    await bot.delete_message(message.chat.id, message.message_id)
+    command = message.text.lower()
+    history = CalledPublicCommands()
+
+    if history.exists(command):
+        last_call = history.get(command)
+        if last_call['last_called'] + 60 > datetime.now().timestamp():
+            return
+        try:
+            await bot.delete_message(
+                last_call['message']['chat']['id'], last_call['message']['message_id'])
+        except Exception:  # pylint: disable=broad-except
+            pass
+
+    text = "Доступные категории:\n" + \
+        '\n'.join([tag.get('tag') for tag in TagDatabase().tags])
+
+    msg = await bot.send_message(message.chat.id, text)
+    sender = get_sender_of_message(message)
+    history.add(command, sender=sender, message=msg.json)
 
 
 async def on_message_received(message: Message, bot: Bot):

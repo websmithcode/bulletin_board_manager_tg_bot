@@ -160,3 +160,35 @@ class BannedSenders(metaclass=Singletone):
         selector = (where('sender_id') == sender_id) \
             & (where('date') > self.now(subtract_days=days_period))
         return self.db.contains(selector)
+
+
+class CalledPublicCommands(metaclass=Singletone):
+    """Class, that represents database of called public commands."""
+
+    def __init__(self, **kwargs):
+        db_path = kwargs.pop('db', 'db/called_public_commands.json')
+        self.db = TinyDB(db_path, encoding='utf8')
+
+    def add(self, command: str, **extra_data):
+        """Method that adds command to database."""
+        now = datetime.now().timestamp()
+        command_data = {'last_called': now, **extra_data}
+
+        if self.db.contains(where('command') == command):
+            self.db.update(command_data, where('command') == command)
+            return
+
+        command_data['command'] = command
+        self.db.insert(command_data)
+
+    def called(self, command: str, **extra_data) -> bool:
+        """Alias for add()."""
+        return self.add(command, **extra_data)
+
+    def get(self, command: str) -> Dict:
+        """Method that gets command from database."""
+        return self.db.get(where('command') == command)
+
+    def exists(self, command: str) -> bool:
+        """Method that checks if command is in database."""
+        return self.db.contains(where('command') == command)

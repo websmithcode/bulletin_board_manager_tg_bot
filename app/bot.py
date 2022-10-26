@@ -4,6 +4,7 @@ import asyncio
 from telebot import asyncio_filters
 from telebot.async_telebot import AsyncTeleBot
 from telebot.util import content_type_media
+from telebot.types import Message
 
 from handlers.admin_commands import (START_BUTTONS, get_start_commands_markup,
                                      on_hashtag_add, on_hashtag_delete,
@@ -12,7 +13,7 @@ from handlers.admin_commands import (START_BUTTONS, get_start_commands_markup,
 from handlers.admin_configs import (cmd_add_admin, cmd_add_hashtag,
                                     cmd_add_sign, cmd_remove_admin,
                                     cmd_remove_hashtag)
-from handlers.group import on_message_received
+from handlers.group import on_message_received, on_group_show_hashtags
 from handlers.private import (on_hashtag_choose, on_post_processing,
                               send_post_to_group, on_post_cancel_deleting)
 from utils.helpers import get_user_link
@@ -93,11 +94,16 @@ class Bot(AsyncTeleBot):
                 'content_types': content_type_media,
                 'chat_types': 'private',
             },
-            # Basic handlers
+            # Basic handlersa
+            {
+                'callback': on_group_show_hashtags,
+                'content_types': 'text',
+                'func': lambda message: self.is_main_group(message) and message.text.lower() == 'меню'
+            },
             {
                 'callback': on_message_received,
                 'content_types': content_type_media,
-                'func': lambda message: str(message.chat.id) == str(self.config['CHAT_ID']),
+                'func': self.is_main_group,
             },
         ]
         self.queries = [
@@ -120,6 +126,10 @@ class Bot(AsyncTeleBot):
         ]
 
         self.init()
+
+    def is_main_group(self, message: Message):
+        """ Check if message is from main group"""
+        return str(message.chat.id) == str(self.config['CHAT_ID'])
 
     def init(self):
         """ Init bot
