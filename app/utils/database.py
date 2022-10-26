@@ -1,7 +1,6 @@
 """Модуль предназначенный для работы с базой данных"""
 from datetime import datetime, timedelta
 from pathlib import Path
-from sqlite3 import Timestamp
 from typing import Dict, List
 
 from tinydb import Query, TinyDB, where
@@ -17,7 +16,7 @@ memory = TinyDB(storage=MemoryStorage)
 Path("db").mkdir(parents=True, exist_ok=True)
 
 
-class AdminDatabase():
+class AdminDatabase(metaclass=Singletone):
     """Класс представляюший объект базы администраторов."""
 
     def __init__(self, **kwargs):
@@ -82,7 +81,7 @@ class AdminDatabase():
 tag = Query()
 
 
-class TagDatabase():
+class TagDatabase(metaclass=Singletone):
     """Класс представляюший объект базы тегов."""
 
     def __init__(self, **kwargs):
