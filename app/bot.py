@@ -177,7 +177,7 @@ class Bot(AsyncTeleBot):
         @staticmethod
         def sponsored_link(text: str) -> str:
             """ Sponsored link template """
-            return '<a href="https://t.me/biznesschatt/847192">{text}</a>'
+            return f'<a href="https://t.me/biznesschatt/847192">{text}</a>'
 
         @staticmethod
         def moder_link(text: str) -> str:
