@@ -41,8 +41,8 @@ async def spam_handler(call: CallbackQuery, bot: Bot):  # pylint: disable=unused
         bot (AsyncTeleBot): Bot object.
     """
     log.info('Spam handler: %s', call.data)
-    sender = get_sender_of_message(call.message)
-    log.log('Spamer: %s', sender)
+    sender = messages.get(Query().msg_id == call.message.id).get('sender')
+    log.info('Spamer: %s', sender)
     BannedSenders().add(sender.get('chat_id'))
 
 

@@ -26,9 +26,10 @@ class BannedUsersValidationHandler:
         sender = get_sender_of_message(message)
         user_link = get_user_link(sender)
         if self.is_banned_callback(sender):
-            return self.decline(self.Messages.SPAM.value % user_link)
+            rules_link = self.moder.bot.Strings.rules_link('правилами')
+            return self.decline(self.Messages.SPAM.value % (user_link, rules_link))
         return self.valid()
 
     class Messages(Enum):
         """Banned users validation handler messages."""
-        SPAM = "%s, превышен лимит сообщений в чате. Пожалуйста, не спамьте."
+        SPAM = "%s, превышен лимит сообщений в чате. Пожалуйста, не спамьте и ознакомьтесь с %s чата."
