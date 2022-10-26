@@ -32,4 +32,4 @@ class BannedUsersValidationHandler:
 
     class Messages(Enum):
         """Banned users validation handler messages."""
-        SPAM = "%s, превышен лимит сообщений в чате. Пожалуйста, не спамьте и ознакомьтесь с %s чата."
+        SPAM = "%s, превышен лимит бесплатных сообщений в чате. Пожалуйста, не спамьте и ознакомьтесь с %s чата."
