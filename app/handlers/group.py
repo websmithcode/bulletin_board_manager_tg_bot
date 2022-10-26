@@ -61,21 +61,22 @@ async def on_message_received(message: Message, bot: Bot):
         `message (Message)`: объект сообщения
         `bot (Bot)`: объект бота
     """
-    premoderation_result = bot.premoderation.process_message(message)
-    if premoderation_result.get('status') is bot.premoderation.Status.WHITELIST:
-        return
+    log.info('method: on_message_received, full recieved message: %s', message.json)
 
-    if premoderation_result.get('status') is bot.premoderation.Status.DECLINE:
-        await bot.delete_message(message.chat.id, message.message_id)
-        await send_info_message(message, bot, premoderation_result.get('reason'))
-        return
+    premoderation_result = bot.premoderation.process_message(message)
+    match premoderation_result['status']:
+        case bot.premoderation.Status.WHITELIST:
+            return
+        case bot.premoderation.Status.DECLINE:
+            await bot.delete_message(message.chat.id, message.message_id)
+            await send_info_message(message, bot, premoderation_result.get('text'))
+            return
 
     name = message.from_user.username if message.from_user.username else message.from_user.full_name
     html_text = get_html_text_of_message(message)
 
     log.info('method: on_message_received'
              'Received message: %s from %s, %s', html_text, name, message.from_user.id)
-    log.info('method: on_message_received, full recieved message: %s', message.json)
 
     if message.content_type in ('text', 'photo', 'video', 'document', 'hashtag', 'animation'):
         meta = make_meta_string(get_sender_of_message(message))

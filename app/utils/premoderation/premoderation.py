@@ -7,7 +7,8 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from telebot.types import Message
-from .handlers import WhiteList, caption_length_validator, text_length_validator
+
+from .handlers import (EmojiTool, WhiteList, Length)
 
 if TYPE_CHECKING:
     from bot import Bot
@@ -18,56 +19,83 @@ class Premoderation:  # pylint: disable=too-few-public-methods
 
     def __init__(self, bot: Bot, logger: logging.Logger) -> None:
         """Initialize class."""
-        self.validators = []
 
         self.bot = bot
         self.config = bot.config
         self.log = logger
+        self.emoji_tool = EmojiTool(self)
+        self.length_tool = Length(self)
 
-        self.whitelist = WhiteList(self.config.get('CHATS_ID_WHITELIST'))
+        self.whitelist = WhiteList(self)
 
-        self._limit_caption = 1024
-        self._limit_text = 4096
+        self._limits = {
+            'caption': 1024,
+            'text': 4096,
+            'emoji': None
+        }
+        self.validators = [self.whitelist.validate]
 
     def process_message(self, message: Message) -> bool:
         """Process message."""
-        if self.whitelist.process_message(message):
-            res = {'status': Premoderation.Status.WHITELIST}
-            self.log.info("Message is whitelisted on premoderation: %s", res)
-            return res
-
         for validator in self.validators:
-            res = validator(self.bot, message)
-            if res.get('status') is Premoderation.Status.DECLINE:
+            res = validator(message)
+            self.log.info("Validator result: %s", res)
+            if res.get('status') is not Premoderation.Status.VALID:
                 self.log.info("Message is declined on premoderation: %s", res)
                 return res
-        res = {'status': Premoderation.Status.VALID}
 
         self.log.info("Message is validated on premoderation: %s", res)
-        return res
+        return self.Status.valid()
 
-    @property
-    def caption_limit(self) -> int:
-        """Get caption limit."""
-        return self._limit_caption
+    def get_limit(self, key: str, fallback=None) -> int:
+        """Get limit value"""
+        return self._limits.get(key, fallback)
 
-    @property
-    def text_limit(self) -> int:
-        """Get text limit."""
-        return self._limit_text
+    def set_limit(self, key: str, value: int) -> None:
+        """Set limit value"""
+        self._limits[key] = value
 
     def limit_caption(self, val: int = 1024) -> None:
         """Set caption limit."""
-        self.validators.append(caption_length_validator)
-        self._limit_caption = val
+        self.validators.append(self.length_tool.caption_validate)
+        self.set_limit('caption', val)
 
     def limit_text(self, val: int = 4096) -> None:
         """Set text limit."""
-        self.validators.append(text_length_validator)
-        self._limit_text = val
+        self.validators.append(self.length_tool.text_validate)
+        self.set_limit('text',  val)
+
+    def limit_emoji(self, val: int = 5) -> None:
+        """Set emoji limit."""
+        self.validators.append(self.emoji_tool.validate)
+        self.set_limit('emoji', val)
 
     class Status(Enum):
         """Premoderation status enum."""
         DECLINE = 0
         VALID = 1
         WHITELIST = 2
+
+        @classmethod
+        def get_status(cls, status: Premoderation.Status, text: str = None,
+                       validator: str | None = None) -> dict:
+            """Get valid status."""
+            _status = {'status': status, 'validator': validator}
+            if status is cls.DECLINE:
+                _status['text'] = text
+            return _status
+
+        @classmethod
+        def valid(cls, validator: str | None = None) -> dict:
+            """Get valid status."""
+            return cls.get_status(cls.VALID, validator=validator)
+
+        @classmethod
+        def whitelist(cls, validator: str | None = None) -> dict:
+            """Get whitelist status."""
+            return cls.get_status(cls.WHITELIST, validator=validator)
+
+        @classmethod
+        def decline(cls, text: str, validator: str | None = None) -> dict:
+            """Get decline status."""
+            return cls.get_status(cls.DECLINE, text, validator=validator)

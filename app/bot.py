@@ -29,8 +29,9 @@ class Bot(AsyncTeleBot):
         super().__init__(self.config['TOKEN'], **kwargs, parse_mode='HTML')
 
         self.premoderation = Premoderation(self, log)
-        self.premoderation.limit_caption(1024-325)
-        self.premoderation.limit_text(4096-325)
+        self.premoderation.limit_caption(700)
+        self.premoderation.limit_text(3500)
+        self.premoderation.limit_emoji(5)
 
         self.commands = [
             # Admin handlers
