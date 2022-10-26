@@ -57,11 +57,6 @@ class DeclineCommands(Enum):
         'command': get_decline_command('MORE_THAN_ONCE'),
         'text': 'Больше 1-го раза',
         'reason': 'Запрещена реклама офферов <b>более 1-го раза</b> в неделю.',
-    }
-    SPAM = {
-        'command': get_decline_command('SPAM'),
-        'text': 'Спам',
-        'reason': 'Запрещен <b>спам</b>.',
         'callback': spam_handler,
     }
     SCAM = {
@@ -74,36 +69,6 @@ class DeclineCommands(Enum):
         'text': 'Ссылка',
         'reason': 'Запрещены <b>любые ссылки</b> в объявлениях, ссылка для связи с вами будет"\
             " добавлена автоматически.',
-    }
-    PHOTO_OR_FILE = {
-        'command': get_decline_command('PHOTO_OR_FILE'),
-        'text': 'Фото или файлы',
-        'reason': 'Запрещено <b>прикрепление</b> фото, видео, GIF и файлов.',
-    }
-    AUDIO_OR_VIDEO = {
-        'command': get_decline_command('AUDIO_OR_VIDEO'),
-        'text': 'Аудио или видеосообщение',
-        'reason': 'Запрещена отправка <b>аудио</b>- и <b>видео</b>сообщений.',
-    }
-    BOT = {
-        'command': get_decline_command('BOT'),
-        'text': 'Бот',
-        'reason': 'Запрещена любая <b>реклама от ботов</b>.',
-    }
-    ANIMATED_EMOJI = {
-        'command': get_decline_command('ANIMATED_EMOJI'),
-        'text': 'Анимированные emoji',
-        'reason': 'Запрещены <b>анимированные emoji</b> в тексте объявлений.',
-    }
-    MORE_THAN_FIVE_EMOJI = {
-        'command': get_decline_command('MORE_THAN_FIVE_EMOJI'),
-        'text': 'Более 5 emoji',
-        'reason': 'Запрещено использование <b>более 5 emoji</b> в объявлении.',
-    }
-    HASHTAGS = {
-        'command': get_decline_command('HASHTAGS'),
-        'text': 'Хэштеги',
-        'reason': 'Запрещено использование <b>#хэштегов</b>, они будут установлены автоматически.',
     }
     VEILED = {
         'command': get_decline_command('VEILED'),
