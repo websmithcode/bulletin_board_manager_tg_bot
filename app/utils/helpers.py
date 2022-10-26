@@ -99,6 +99,21 @@ def strip_hashtags(text: str) -> str:
     return re.sub(r"#(\w+)", "", text)
 
 
+def strip_unavailable_tags(html_text: str) -> str:
+    """Strip html tag braces, if they name is in the list"""
+    whitelist = ['b', 'i', 'u', 's', 'code',
+                 'pre', 'a', 'span', 'em', 'strong', 'del']
+
+    def replacer(match):
+        tag_string = match.group(1)
+        tag = tag_string.split(' ')[0].strip('/')
+        if tag.lower() in whitelist:
+            return f"<{tag_string}>"
+        return tag
+
+    return re.sub(r"<([^>]+)>", replacer, html_text)
+
+
 def message_text_filter(html_text: str) -> str:
     """Strip links and hashtags from html text and other unnecessary stuff"""
     strippers = [
@@ -108,7 +123,8 @@ def message_text_filter(html_text: str) -> str:
         strip_emails,
         strip_mentions,
         collapse_breaks,
-        collapse_spaces
+        collapse_spaces,
+        # strip_unavailable_tags
     ]
     for stripper in strippers:
         html_text = stripper(html_text)
