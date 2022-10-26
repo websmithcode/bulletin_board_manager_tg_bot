@@ -162,11 +162,14 @@ async def on_error_message_reply(message: Message, bot: Bot):
 
 async def delete_post_in_private_handler(call: CallbackQuery, bot: Bot, timeout: int = 30):
     """Handler, which deletes post in private chat"""
+    chat_id = call.message.chat.id
+    message_id = call.message.message_id
+    await bot.edit_message_reply_markup(chat_id, message_id, reply_markup=get_cancel_deleting_markup())
     await asyncio.sleep(timeout)
     messages_prevent_db = MessagesToPreventDeletingDB()
-    if not messages_prevent_db.has(call.message.id):
-        await bot.delete_message(call.from_user.id, call.message.message_id)
-        messages_prevent_db.remove(call.message.id)
+    if not messages_prevent_db.has(message_id):
+        messages_prevent_db.remove(message_id)
+        await bot.delete_message(chat_id, message_id)
         return
 
 
@@ -207,7 +210,7 @@ async def decline_handler(call: CallbackQuery, bot: Bot):
                 '\n<b>Причина:</b>'\
                 f'\n{decline_command.value["reason"]}'
 
-            await edit_message(bot, call.message, new_text, reply_markup=get_cancel_deleting_markup())
+            await edit_message(bot, call.message, new_text)
 
             await asyncio.gather(
                 send_decline_notification_to_group(
@@ -233,6 +236,7 @@ async def accept_handler(call: CallbackQuery, bot: Bot):
         '\n\n✅ОДОБРЕНО✅'
 
     await edit_message(bot, call.message, new_text)
+    await delete_post_in_private_handler(call, bot)
 
 
 async def on_post_cancel_deleting(call: CallbackQuery, bot: Bot):
