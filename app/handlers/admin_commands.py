@@ -24,6 +24,7 @@ START_BUTTONS = ['Добавить теги',
                  'Добавить подпись',
                  'Отправить пост в группу']
 CANCEL_BUTTONS = ['Отмена']
+hideBoard = ReplyKeyboardRemove()
 
 
 def create_start_commands_markup():
@@ -34,9 +35,6 @@ def create_start_commands_markup():
 def create_cancel_markup():
     """ Create markup with cancel button """
     return reply_keyboard_markup_from_list(CANCEL_BUTTONS)
-
-
-hideBoard = ReplyKeyboardRemove()
 
 
 async def get_start_commands_markup(message: Message, bot: Bot):

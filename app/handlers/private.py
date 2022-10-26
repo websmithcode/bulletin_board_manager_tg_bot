@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 from telebot.types import (CallbackQuery, InlineKeyboardButton,
                            InlineKeyboardMarkup, Message)
 from tinydb import Query
-from utils.database import AdminDatabase, TagDatabase
+from utils.database import AdminDatabase, MessagesToPreventDeletingDB, TagDatabase
 from utils.database import memory as messages
 from utils.helpers import (get_user_link, edit_message,
                            get_html_text_of_message, make_meta_string,
@@ -134,6 +134,17 @@ def get_hashtag_markup() -> InlineKeyboardMarkup:
     return hashtag_markup
 
 
+def get_cancel_deleting_markup() -> InlineKeyboardMarkup:
+    """ Returns cancel deleting markup """
+
+    markup = InlineKeyboardMarkup()
+    markup.add(InlineKeyboardButton(
+        '🚫 Отменить удаление',
+        callback_data='/post_cancel_deleting'
+    ))
+    return markup
+
+
 async def on_error_message_reply(message: Message, bot: Bot):
     """Хендлер, срабатывающий при ошибки парсинга/отправки сообщения.
 
@@ -147,6 +158,16 @@ async def on_error_message_reply(message: Message, bot: Bot):
     params['chat_id'] = bot.config['CHAT_ID']
     params['entities'] = message.entities
     await get_send_procedure(message_type, bot)(**params)
+
+
+async def delete_post_in_private_handler(call: CallbackQuery, bot: Bot, timeout: int = 30):
+    """Handler, which deletes post in private chat"""
+    await asyncio.sleep(timeout)
+    messages_prevent_db = MessagesToPreventDeletingDB()
+    if not messages_prevent_db.has(call.message.id):
+        await bot.delete_message(call.from_user.id, call.message.message_id)
+        messages_prevent_db.remove(call.message.id)
+        return
 
 
 async def decline_handler(call: CallbackQuery, bot: Bot):
@@ -186,8 +207,13 @@ async def decline_handler(call: CallbackQuery, bot: Bot):
                 '\n<b>Причина:</b>'\
                 f'\n{decline_command.value["reason"]}'
 
-            await edit_message(bot, call.message, new_text)
-            await send_decline_notification_to_group(decline_command.value['reason'], call, bot)
+            await edit_message(bot, call.message, new_text, reply_markup=get_cancel_deleting_markup())
+
+            await asyncio.gather(
+                send_decline_notification_to_group(
+                    decline_command.value['reason'], call, bot),
+                delete_post_in_private_handler(call, bot)
+            )
 
 
 async def accept_handler(call: CallbackQuery, bot: Bot):
@@ -207,6 +233,19 @@ async def accept_handler(call: CallbackQuery, bot: Bot):
         '\n\n✅ОДОБРЕНО✅'
 
     await edit_message(bot, call.message, new_text)
+
+
+async def on_post_cancel_deleting(call: CallbackQuery, bot: Bot):
+    """ Cancel deleting handler
+
+    Args:
+        call (CallbackQuery): CallbackQuery object.
+        bot (AsyncTeleBot): Bot object.
+    """
+    log.info('Cancel deleting handler: %s', call.data)
+
+    MessagesToPreventDeletingDB().add(call.message.id)
+    await bot.edit_message_reply_markup(call.from_user.id, call.message.id, reply_markup=None)
 
 
 async def on_post_processing(call: CallbackQuery, bot: Bot):

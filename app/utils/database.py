@@ -2,10 +2,11 @@
 from pathlib import Path
 from typing import Dict, List
 
-from tinydb import Query, TinyDB
+from tinydb import Query, TinyDB, where
 from tinydb.storages import MemoryStorage
 
 from utils.logger import log
+from utils.helpers import Singletone
 
 admin = Query()
 memory = TinyDB(storage=MemoryStorage)
@@ -105,3 +106,23 @@ class TagDatabase():
         """Метод позволяющий удалять теги из базы."""
         _ = self.__db.remove(tag.tag == value)
         log.info('Тег удален! Id: %s.', str(_))
+
+
+class MessagesToPreventDeletingDB(metaclass=Singletone):
+    """Class, that represents database of messages to prevent deleting."""
+
+    def __init__(self, **kwargs):
+        db_path = kwargs.pop('db', 'db/messages_to_prevent_deleting.json')
+        self.db = TinyDB(db_path, encoding='utf8')
+
+    def add(self, message_id: int):
+        """Method that adds message to database."""
+        self.db.insert({'message_id': message_id})
+
+    def remove(self, message_id: int):
+        """Method that removes message from database."""
+        self.db.remove(where('message_id') == message_id)
+
+    def has(self, message_id: int) -> bool:
+        """Method that checks if message is in database."""
+        return self.db.contains(where('message_id') == message_id)

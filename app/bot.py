@@ -14,7 +14,7 @@ from handlers.admin_configs import (cmd_add_admin, cmd_add_hashtag,
                                     cmd_remove_hashtag)
 from handlers.group import on_message_received
 from handlers.private import (on_hashtag_choose, on_post_processing,
-                              send_post_to_group)
+                              send_post_to_group, on_post_cancel_deleting)
 from utils.helpers import get_user_link
 from utils.logger import log
 from utils.premoderation.premoderation import Premoderation
@@ -97,6 +97,7 @@ class Bot(AsyncTeleBot):
             {
                 'callback': on_message_received,
                 'content_types': content_type_media,
+                'func': lambda message: str(message.chat.id) == str(self.config['CHAT_ID']),
             },
         ]
         self.queries = [
@@ -111,6 +112,10 @@ class Bot(AsyncTeleBot):
             {
                 'callback': on_post_processing,
                 'func': lambda call: '/post_processing' in call.data
+            },
+            {
+                'callback': on_post_cancel_deleting,
+                'func': lambda call: '/post_cancel_deleting' in call.data
             },
         ]
 

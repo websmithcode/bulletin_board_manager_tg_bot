@@ -128,3 +128,15 @@ async def edit_message(bot: Bot, message: Message, new_text: str, **kwargs):
         params['disable_web_page_preview'] = True
 
     return await getattr(bot, f"edit_message_{message_text_type}")(**params)
+
+
+class Singletone(type):
+    """Abstract class for singleton pattern."""
+
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(
+                Singletone, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
