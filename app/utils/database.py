@@ -1,5 +1,7 @@
 """Модуль предназначенный для работы с базой данных"""
+from datetime import datetime, timedelta
 from pathlib import Path
+from sqlite3 import Timestamp
 from typing import Dict, List
 
 from tinydb import Query, TinyDB, where
@@ -126,3 +128,36 @@ class MessagesToPreventDeletingDB(metaclass=Singletone):
     def has(self, message_id: int) -> bool:
         """Method that checks if message is in database."""
         return self.db.contains(where('message_id') == message_id)
+
+
+class BannedSenders(metaclass=Singletone):
+    """Class, that represents database of banned senders."""
+
+    def __init__(self, **kwargs):
+        db_path = kwargs.pop('db', 'db/banned_senders.json')
+        self.db = TinyDB(db_path, encoding='utf8')
+
+    @staticmethod
+    def now(add_days: int = 0, subtract_days: int = 0) -> str:
+        """Property, that returns timestamp"""
+        now = datetime.now()
+        if add_days:
+            now += timedelta(days=add_days)
+        elif subtract_days:
+            now -= timedelta(days=subtract_days)
+        return now.timestamp()
+
+    def add(self, sender_id: int):
+        """Method that adds user to database."""
+        self.remove(sender_id)
+        self.db.insert({'sender_id': sender_id, 'date': self.now()})
+
+    def remove(self, sender_id: int):
+        """Method that removes user from database."""
+        self.db.remove(where('sender_id') == sender_id)
+
+    def has(self, sender_id: int, days_period=7) -> bool:
+        """Method that checks if user is in database."""
+        selector = (where('sender_id') == sender_id) \
+            & (where('date') > self.now(subtract_days=days_period))
+        return self.db.contains(selector)

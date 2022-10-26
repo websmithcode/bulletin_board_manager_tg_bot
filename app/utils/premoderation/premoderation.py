@@ -8,7 +8,10 @@ from typing import TYPE_CHECKING
 
 from telebot.types import Message
 
-from .handlers import (EmojiTool, WhiteList, Length)
+from utils.database import BannedSenders
+
+from .handlers import (EmojiTool, WhiteList, Length,
+                       BannedUsersValidationHandler)
 
 if TYPE_CHECKING:
     from bot import Bot
@@ -26,6 +29,12 @@ class Premoderation:  # pylint: disable=too-few-public-methods
         self.emoji_tool = EmojiTool(self)
         self.length_tool = Length(self)
 
+        def is_banned_callback(sender):
+            return not BannedSenders().has(sender.get('chat_id'))
+
+        self.banned_validator = BannedUsersValidationHandler(
+            self, is_banned_callback)
+
         self.whitelist = WhiteList(self)
 
         self._limits = {
@@ -33,7 +42,10 @@ class Premoderation:  # pylint: disable=too-few-public-methods
             'text': 4096,
             'emoji': None
         }
-        self.validators = [self.whitelist.validate]
+        self.validators = [
+            self.whitelist.validate,
+            self.banned_validator.validate,
+        ]
 
     def process_message(self, message: Message) -> bool:
         """Process message."""

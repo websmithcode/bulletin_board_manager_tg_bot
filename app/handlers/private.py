@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING
 from telebot.types import (CallbackQuery, InlineKeyboardButton,
                            InlineKeyboardMarkup, Message)
 from tinydb import Query
-from utils.database import AdminDatabase, MessagesToPreventDeletingDB, TagDatabase
+from utils.premoderation.helpers import get_sender_of_message
+from utils.database import AdminDatabase, BannedSenders, MessagesToPreventDeletingDB, TagDatabase
 from utils.database import memory as messages
 from utils.helpers import (get_user_link, edit_message,
                            get_html_text_of_message, make_meta_string,
@@ -32,6 +33,18 @@ def get_decline_command(action: str) -> str:
     return '/post_processing decline ' + action
 
 
+async def spam_handler(call: CallbackQuery, bot: Bot):  # pylint: disable=unused-argument
+    """ Spam handler
+
+    Args:
+        call (CallbackQuery): CallbackQuery object.
+        bot (AsyncTeleBot): Bot object.
+    """
+    log.info('Spam handler: %s', call.data)
+    sender = get_sender_of_message(call.message)
+    BannedSenders().add(sender.get('chat_id'))
+
+
 class DeclineCommands(Enum):
     """ Enum of decline commands """
     MAT = {
@@ -43,6 +56,12 @@ class DeclineCommands(Enum):
         'command': get_decline_command('MORE_THAN_ONCE'),
         'text': 'Больше 1-го раза',
         'reason': 'Запрещена реклама офферов <b>более 1-го раза</b> в неделю.',
+    }
+    SPAM = {
+        'command': get_decline_command('SPAM'),
+        'text': 'Спам',
+        'reason': 'Запрещен <b>спам</b>.',
+        'callback': spam_handler,
     }
     SCAM = {
         'command': get_decline_command('SCAM'),
@@ -200,6 +219,9 @@ async def decline_handler(call: CallbackQuery, bot: Bot):
             decline_command = DeclineCommands[action] or None
             if decline_command is None:
                 return
+
+            if decline_command.value['callback'] is not None:
+                await decline_command.value['callback'](call, bot)
 
             message_document = messages.get(Query().msg_id == call.message.id)
             html_text = build_html_text(
