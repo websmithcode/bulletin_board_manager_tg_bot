@@ -23,15 +23,17 @@ db_admins = AdminDatabase()
 db_messages = UnmarkedMessages()
 
 
-async def send_info_message(message: Message, bot: Bot, text=None):
+async def send_info_message(message: Message, bot: Bot, text=None, timeout=30):
     """Method for sending info message to group, when new message was send to moderator"""
     user_link = get_user_link_from_message(message)
     text = text or f'Спасибо за пост, {user_link}, ' \
         'он будет опубликован после проверки администратора.'
 
     message = await bot.send_message(message.chat.id, text)
-    await asyncio.sleep(30)
+    log.info('method: on_message_received, info message(%s) sended', message.id)
+    await asyncio.sleep(timeout)
     await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
+    log.info('method: on_message_received, info message(%s) deleted', message.id)
 
 
 def create_markup() -> InlineKeyboardButton:
@@ -127,7 +129,3 @@ async def on_message_received(message: Message, bot: Bot):
     await bot.delete_message(message.chat.id, message.id)
     log.info('method: on_message_received, message deleted')
     await send_info_message(message, bot)
-    log.info('method: on_message_received, info message sended')
-    # сохраняем сообщение
-    # удаляем сообщение
-    # отправляем админам
