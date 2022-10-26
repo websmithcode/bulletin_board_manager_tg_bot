@@ -30,7 +30,7 @@ class Premoderation:  # pylint: disable=too-few-public-methods
         self.length_tool = Length(self)
 
         def is_banned_callback(sender):
-            return not BannedSenders().has(sender.get('chat_id'))
+            return BannedSenders().has(sender.get('chat_id'))
 
         self.banned_validator = BannedUsersValidationHandler(
             self, is_banned_callback)

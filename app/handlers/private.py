@@ -42,6 +42,7 @@ async def spam_handler(call: CallbackQuery, bot: Bot):  # pylint: disable=unused
     """
     log.info('Spam handler: %s', call.data)
     sender = get_sender_of_message(call.message)
+    log.log('Spamer: %s', sender)
     BannedSenders().add(sender.get('chat_id'))
 
 
@@ -220,8 +221,8 @@ async def decline_handler(call: CallbackQuery, bot: Bot):
             if decline_command is None:
                 return
 
-            if decline_command.value['callback'] is not None:
-                await decline_command.value['callback'](call, bot)
+            if (callback := decline_command.value.get('callback')) is not None:
+                await callback(call, bot)
 
             message_document = messages.get(Query().msg_id == call.message.id)
             html_text = build_html_text(
