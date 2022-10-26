@@ -28,7 +28,7 @@ async def send_info_message(message: Message, bot: Bot, text=None, timeout=30):
     text = text or f'Спасибо за пост, {user_link}, ' \
         'он будет опубликован после проверки администратора.'
 
-    message = await bot.send_message(message.chat.id, text)
+    message = await bot.send_message(message.chat.id, text, disable_web_page_preview=True)
     log.info('method: on_message_received, info message(%s) sended', message.id)
     await asyncio.sleep(timeout)
     await bot.delete_message(chat_id=message.chat.id, message_id=message.id)
