@@ -124,7 +124,7 @@ def get_cancel_deleting_markup() -> InlineKeyboardMarkup:
 
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton(
-        '🚫 Отменить удаление',
+        '🚫 Отменить автоудаление',
         callback_data='/post_cancel_deleting'
     ))
     return markup
