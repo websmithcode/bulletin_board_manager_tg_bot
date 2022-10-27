@@ -14,7 +14,6 @@ from utils.logger import log
 if TYPE_CHECKING:
     from bot import Bot
 
-db_tags = TagDatabase()
 db_admins = AdminDatabase()
 
 
@@ -43,8 +42,9 @@ async def cmd_add_hashtag(message: Message, bot: Bot):
     else:
         text = message.text.replace('/add_hashtag', '')
         hashtags = text.split()
+        db_tags = TagDatabase()
         for hashtag in hashtags:
-            db_tags.tags = hashtag
+            db_tags.add(hashtag)
             log.info('method: cmd_add_hashtag,hashtag: %s was added', hashtag)
         await bot.reply_to(message, "Хештег добавлен!")
 
@@ -101,8 +101,9 @@ async def cmd_remove_hashtag(message: Message, bot: Bot):
         await bot.reply_to(message, 'У вас нет прав на выполнение этой команды')
     else:
         hashtags = message.text.replace('/remove_hashtag', '').strip().split()
+        db_tags = TagDatabase()
         for hashtag in hashtags:
-            db_tags.remove_tag(hashtag)
+            db_tags.remove(hashtag)
             log.info('method: cmd_remove_hashtag, hashtag %s was deleted', hashtag)
         await bot.reply_to(message, "Хештег удален!")
 

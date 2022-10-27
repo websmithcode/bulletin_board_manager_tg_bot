@@ -1,13 +1,14 @@
 """Модуль предназначенный для работы с базой данных"""
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List
+import re
+from typing import Dict, List, Union
 
 from tinydb import Query, TinyDB, where
 from tinydb.storages import MemoryStorage
 
-from utils.logger import log
 from utils.helpers import Singletone
+from utils.logger import log
 
 admin = Query()
 memory = TinyDB(storage=MemoryStorage)
@@ -78,35 +79,70 @@ class AdminDatabase(metaclass=Singletone):
         return self.__db.get(admin.id == admin_id)
 
 
-tag = Query()
-
-
 class TagDatabase(metaclass=Singletone):
     """Класс представляюший объект базы тегов."""
 
     def __init__(self, **kwargs):
         self.__db = TinyDB(kwargs.pop('db', 'db/tags.json'), encoding='utf8')
+        self.Tag = Query()
 
     @property
     def tags(self) -> List[Dict]:
         """Поле представляющее список тегов.
 
         Returns:
+            `List[str]`: Список документов тегов.
+        """
+        return self.all(unpack=True)
+
+    def all(self, sort=True, unpack=False) -> Union[List[str], List[dict]]:
+        """Returns list of all tags.
+
+        Returns:
             `List[Dict]`: Список документов тегов.
         """
         log.info('Вызван список тегов!')
-        return self.__db.all()
+        tags = self.__db.all()
+        if sort:
+            tags = sorted(tags, key=lambda x: x['tag'])
+        if unpack:
+            tags = [tag['tag'] for tag in tags]
+        return tags
+
+    def add(self, tag: str) -> Union[int, bool]:
+        """Add tag to database.
+        If tag already exists, returns it's id.
+        If is invalid, returns False.
+
+        Args:
+            `tag (str)`: Тег.
+        """
+        tag = self._prepare_tag(tag)
+        if tag == '#':
+            return False
+
+        if not self.__db.contains(where('tag') == tag):
+            _ = self.__db.insert({'tag': tag})
+            log.info('Запись тега успешно добавлена! Id: %s.', str(_))
+            return _
+        return self.__db.get(where('tag') == tag).doc_id
 
     @tags.setter
     def tags(self, value: str):
         """Сеттер поля тегов, позволяющий добавлять документы в базу."""
-        _ = self.__db.insert({'tag': value})
-        log.info('Тег успешно добавлен! Id: %s.', str(_))
+        _ = self.add(value)
 
-    def remove_tag(self, value: str):
+    def remove(self, value: str):
         """Метод позволяющий удалять теги из базы."""
-        _ = self.__db.remove(tag.tag == value)
+        tag = self._prepare_tag(value)
+        _ = self.__db.remove(where('tag') == tag)
         log.info('Тег удален! Id: %s.', str(_))
+
+    @staticmethod
+    def _prepare_tag(tag: str) -> str:
+        """Prepare tag for search."""
+        tag = re.sub(r'(^#?\d*|\W)', '', tag.lower())
+        return f'#{tag}'
 
 
 class MessagesToPreventDeletingDB(metaclass=Singletone):

@@ -16,7 +16,6 @@ if TYPE_CHECKING:
 
 
 db_admins = AdminDatabase()
-db_tags = TagDatabase()
 
 START_BUTTONS = ['Добавить теги',
                  'Удалить теги',
@@ -93,10 +92,9 @@ async def on_hashtag_add(message: Message, bot: Bot):
         await on_decline(message, bot)
     else:
         hashtags = message.text.split()
+        db_tags = TagDatabase()
         for hashtag in hashtags:
-            # prepare hastag. If not starts with #, add it, or strip extra #
-            hashtag = "#" + hashtag.replace('#', '')
-            db_tags.tags = hashtag
+            db_tags.add(hashtag)
         await bot.send_message(message.chat.id, "Хештег добавлен!",
                                reply_markup=create_start_commands_markup())
         await bot.set_state(message.from_user.id, MyStates.on_start_button_choose, message.chat.id)
@@ -109,10 +107,9 @@ async def on_hashtag_delete(message: Message, bot: Bot):
         await on_decline(message, bot)
     else:
         hashtags = message.text.split()
+        db_tags = TagDatabase()
         for hashtag in hashtags:
-            # prepare hastag. If not starts with #, add it, or strip extra #
-            hashtag = "#" + hashtag.replace('#', '')
-            db_tags.remove_tag(hashtag)
+            db_tags.remove(hashtag)
         await bot.send_message(message.chat.id, "Хештег удален!",
                                reply_markup=create_start_commands_markup())
         await bot.set_state(message.from_user.id, MyStates.on_start_button_choose, message.chat.id)
@@ -120,10 +117,10 @@ async def on_hashtag_delete(message: Message, bot: Bot):
 
 async def on_list_of_hashtags(message: Message, bot: Bot):
     """ List of hashtags command handler """
-    tag_list = ''
-    for tag in db_tags.tags:
-        tag_list = tag_list + f'{tag["tag"]}\n'
-    await bot.send_message(message.chat.id, 'Вот список имеющихся тегов:\n' + tag_list)
+    tag_list = 'Вот список имеющихся тегов:\n'
+    tag_list += '\n'.join(TagDatabase().tags)
+
+    await bot.send_message(message.chat.id,  tag_list)
     log.info('\nСписок хештегов выведен')
 
 

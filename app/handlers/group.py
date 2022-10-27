@@ -3,10 +3,10 @@ from __future__ import annotations
 
 import asyncio
 import traceback
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from telebot.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
-from datetime import datetime
 from utils.database import AdminDatabase, CalledPublicCommands, TagDatabase
 from utils.database import memory as messages
 from utils.helpers import (get_html_text_of_message, get_message_text_type,
@@ -71,7 +71,7 @@ async def on_group_show_hashtags(message: Message, bot: Bot):
             pass
 
     text = "Доступные категории:\n" + \
-        '\n'.join([tag.get('tag') for tag in TagDatabase().tags])
+        '\n'.join(TagDatabase().tags)
 
     msg = await bot.send_message(message.chat.id, text)
     sender = get_sender_of_message(message)

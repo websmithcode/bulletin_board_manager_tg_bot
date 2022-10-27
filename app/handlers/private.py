@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING
 from telebot.types import (CallbackQuery, InlineKeyboardButton,
                            InlineKeyboardMarkup, Message)
 from tinydb import Query
-from utils.premoderation.helpers import get_sender_of_message
 from utils.database import AdminDatabase, BannedSenders, MessagesToPreventDeletingDB, TagDatabase
 from utils.database import memory as messages
 from utils.helpers import (get_user_link, edit_message,
@@ -24,7 +23,6 @@ from handlers.group import create_markup
 if TYPE_CHECKING:
     from bot import Bot
 
-db_tags = TagDatabase()
 db_admins = AdminDatabase()
 
 
@@ -105,17 +103,18 @@ def get_hashtag_markup() -> InlineKeyboardMarkup:
     Returns:
         `InlineKeyboardMarkup`: Разметка сообщения
     """
-    hashtags = sorted(db_tags.tags, key=itemgetter('tag'))
     hashtag_markup = InlineKeyboardMarkup()
-    for hashtag in hashtags:
-        hashtag_button = InlineKeyboardButton(f'{hashtag.get("tag")}',
-                                              callback_data=f'{hashtag.get("tag")}')
-        hashtag_markup.add(hashtag_button)
 
-    hashtag_markup.add(InlineKeyboardButton('✅ Завершить выбор и отправить сообщение',
-                                            callback_data='end_button'))
-    hashtag_markup.add(InlineKeyboardButton('🚫 Отмена',
-                                            callback_data='/post_processing reset'))
+    def add_button(text: str, cb_data: str) -> None:
+        """ Shortcut for adding button """
+        btn = InlineKeyboardButton(text, callback_data=cb_data)
+        hashtag_markup.add(btn)
+
+    for tag in TagDatabase().tags:
+        add_button(tag, tag)
+    add_button('✅ Завершить выбор и отправить сообщение', 'end_button')
+    add_button('🚫 Отмена', '/post_processing reset')
+
     return hashtag_markup
 
 
@@ -301,6 +300,11 @@ async def on_hashtag_choose(call: CallbackQuery, bot: Bot):
     log.info('method: on_hashtag_choose'
              'message: callback data from callback query id %s is \'%s\'', call.id, call.data)
     saved_message = messages.get(Query().msg_id == call.message.id)
+
+    if saved_message is None:
+        log.error(
+            'method: on_hashtag_choose - message with id %s not found in database', call.message.id)
+        return
 
     hashtag = call.data
     log.info('message: %s', saved_message)
