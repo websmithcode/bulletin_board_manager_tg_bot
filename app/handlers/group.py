@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+from time import sleep
 import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -54,7 +55,7 @@ def create_markup() -> InlineKeyboardButton:
     return message_check_markup
 
 
-async def on_group_show_hashtags(message: Message, bot: Bot):
+async def on_group_show_hashtags(message: Message, bot: Bot, timeout: int = 60):
     """ Send hashtags to group """
     await bot.delete_message(message.chat.id, message.message_id)
     command = message.text.lower()
@@ -62,7 +63,7 @@ async def on_group_show_hashtags(message: Message, bot: Bot):
 
     if history.exists(command):
         last_call = history.get(command)
-        if last_call['last_called'] + 60 > datetime.now().timestamp():
+        if last_call['last_called'] + timeout > datetime.now().timestamp():
             return
         try:
             await bot.delete_message(
@@ -70,12 +71,16 @@ async def on_group_show_hashtags(message: Message, bot: Bot):
         except Exception:  # pylint: disable=broad-except
             pass
 
-    text = "Доступные категории:\n" + \
-        '\n'.join(TagDatabase().tags)
+    text = "Доступные категории:\n" \
+        + '\n'.join(TagDatabase().tags) \
+        + f"\n\nСообщение будет удалено в течение {timeout} секунд."
 
     msg = await bot.send_message(message.chat.id, text)
     sender = get_sender_of_message(message)
     history.add(command, sender=sender, message=msg.json)
+
+    await asyncio.sleep(timeout)
+    await bot.delete_message(msg.chat.id, msg.message_id)
 
 
 async def on_message_received(message: Message, bot: Bot):
