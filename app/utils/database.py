@@ -141,7 +141,7 @@ class TagDatabase(metaclass=Singletone):
     @staticmethod
     def _prepare_tag(tag: str) -> str:
         """Prepare tag for search."""
-        tag = re.sub(r'(^#?\d*|\W)', '', tag.lower())
+        tag = re.sub(r'(^#?\d*|\W)', '', tag).title()
         return f'#{tag}'
 
 
