@@ -73,7 +73,7 @@ async def on_group_show_hashtags(message: Message, bot: Bot, timeout: int = 60):
 
     text = "Доступные категории:\n" \
         + '\n'.join(TagDatabase().tags) \
-        + f"\n\nСообщение будет удалено в течение {timeout} секунд."
+        + f"\n\nСообщение будет автоматически удалено через {timeout} секунд."
 
     msg = await bot.send_message(message.chat.id, text)
     sender = get_sender_of_message(message)
