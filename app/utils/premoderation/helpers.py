@@ -19,15 +19,20 @@ def get_sender_of_message(message: Message):
     }
     if result['is_group_or_channel']:
         result['chat_id'] = str(message.sender_chat.id)
+        result['title'] = message.sender_chat.title
         result['verbose_name'] = message.sender_chat.title.strip()\
             or message.sender_chat.username
-        result['title'] = message.sender_chat.title
     else:
+        first_name = message.from_user.first_name or ''
+        last_name = message.from_user.last_name or ''
+        username = message.from_user.username
+        verbose_name = f'{first_name} {last_name}'.strip() or username
+
         result['chat_id'] = str(message.from_user.id)
-        result['verbose_name'] = f'{message.from_user.first_name} {message.from_user.last_name}'
-        result['username'] = message.from_user.username
-        result['first_name'] = message.from_user.first_name
-        result['last_name'] = message.from_user.last_name
+        result['verbose_name'] = verbose_name
+        result['username'] = username
+        result['first_name'] = first_name
+        result['last_name'] = last_name
 
     logging.info("Sender of message: %s (%s)",
                  result['verbose_name'], result['chat_id'])
