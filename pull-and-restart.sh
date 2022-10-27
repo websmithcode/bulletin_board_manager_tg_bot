@@ -1,1 +1,1 @@
-docker stop $(docker ps -qa) && git pull && . ./run-prod.sh -d
+git pull --rebase && docker stop $(docker ps -qa) && . ./run-prod.sh -d
