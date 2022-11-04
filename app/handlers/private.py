@@ -65,8 +65,7 @@ class DeclineCommands(Enum):
     LINK = {
         'command': get_decline_command('LINK'),
         'text': 'Ссылка',
-        'reason': 'Запрещены <b>любые ссылки</b> в объявлениях, ссылка для связи с вами будет"\
-            " добавлена автоматически.',
+        'reason': 'Запрещены <b>любые ссылки</b> в объявлениях.',
     }
     VEILED = {
         'command': get_decline_command('VEILED'),
